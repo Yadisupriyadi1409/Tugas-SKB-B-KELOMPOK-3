@@ -1,0 +1,1727 @@
+﻿<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workstation Akuntan - ERP Dashboard</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fffbe1',
+              100: '#fff3b8',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    .animate-fade-in { animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(4px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-amber-500/30 selection:text-amber-200">
+<!-- ERP GLOBAL COMMUNICATION / MAINTENANCE -->
+<div id="erpGlobalNotice" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-[95] w-[min(92vw,900px)] px-4 py-3 rounded-2xl border border-indigo-400/30 bg-slate-900/95 backdrop-blur shadow-2xl">
+  <div class="flex items-start gap-3"><div class="text-xl">📢</div><div class="min-w-0 flex-1"><div id="erpGlobalNoticeTitle" class="font-bold text-sm text-white">Pengumuman Sistem</div><div id="erpGlobalNoticeText" class="text-xs text-slate-300 mt-1 whitespace-pre-line"></div></div><button type="button" onclick="closeErpNotice()" class="text-slate-400 hover:text-white">✕</button></div>
+</div>
+<div id="erpMaintenanceOverlay" class="hidden fixed inset-0 z-[90] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-6">
+  <div class="max-w-xl w-full bg-slate-900 border border-rose-500/30 rounded-3xl shadow-2xl p-8 text-center">
+    <div class="w-16 h-16 rounded-2xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-3xl mx-auto mb-5">🛠️</div>
+    <h2 class="text-2xl font-black text-white">Sistem Sedang Maintenance</h2>
+    <p id="erpMaintenanceText" class="text-sm text-slate-300 mt-3 leading-relaxed">Operasional sementara dikunci oleh Super Admin.</p>
+    <div class="mt-6 text-xs text-slate-500">Halaman akan memeriksa status sistem secara otomatis.</div>
+  </div>
+</div>
+
+
+
+  <!-- Container Utama -->
+  <main class="max-w-[1600px] mx-auto p-3 sm:p-5 lg:p-6 space-y-6">
+    
+    <!-- Header Utama -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800 pb-5">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 bg-gradient-to-br from-amber-500 to-amber-700 rounded-xl text-slate-950 font-black shadow-lg shadow-amber-500/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+              Workstation Akuntan
+              <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">SAK Compliant</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Sistem Informasi Akuntansi, Jurnal Double Entry, & Kontrol Transaksi Kasir</p>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="flex items-center gap-3">
+        <div class="bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl text-right">
+          <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Tanggal Kerja Harian</p>
+          <p id="currentWorkDateDisplay" class="text-xs font-mono font-bold text-amber-400">05 Sep 2026</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div>
+            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Status Hari Ini</p>
+            <p id="dailyPeriodBadge" class="text-xs font-bold text-emerald-400">PERIODE TERBUKA</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+
+    <!-- KPI Metric Cards -->
+    <section class="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl shadow-sm">
+        <div class="flex justify-between items-center text-slate-400 mb-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider">Antrean Kasir</span>
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <p id="kpiKasirPending" class="text-2xl font-black text-amber-400 font-mono">0</p>
+        <p class="text-[10px] text-slate-500 mt-1">Perlu review Akuntan</p>
+      </div>
+
+
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl shadow-sm">
+        <div class="flex justify-between items-center text-slate-400 mb-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider">Pending Admin</span>
+          <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+        </div>
+        <p id="kpiAdminPending" class="text-2xl font-black text-sky-400 font-mono">0</p>
+        <p class="text-[10px] text-slate-500 mt-1">Diajukan Akuntan -> Admin</p>
+      </div>
+
+
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl shadow-sm">
+        <div class="flex justify-between items-center text-slate-400 mb-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider">Total COA Aktif</span>
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        </div>
+        <p id="kpiTotalCoa" class="text-2xl font-black text-indigo-400 font-mono">0</p>
+        <p class="text-[10px] text-slate-500 mt-1">Master Akun Keuangan</p>
+      </div>
+
+
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl shadow-sm">
+        <div class="flex justify-between items-center text-slate-400 mb-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider">Jurnal Hari Ini</span>
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <p id="kpiTotalPosted" class="text-2xl font-black text-emerald-400 font-mono">0</p>
+        <p class="text-[10px] text-slate-500 mt-1">Disetujui / Posted</p>
+      </div>
+
+
+      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl shadow-sm col-span-2 lg:col-span-1">
+        <div class="flex justify-between items-center text-slate-400 mb-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider">Status Trial Balance</span>
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 18h12l3-18H3z"></path></svg>
+        </div>
+        <p id="kpiBalanceStatus" class="text-lg font-black text-emerald-400 uppercase mt-1">BALANCED</p>
+        <p class="text-[10px] text-slate-500 mt-0.5">Debit == Kredit</p>
+      </div>
+    </section>
+
+
+    <!-- Navigation Tabs -->
+    <nav class="flex border-b border-slate-800 space-x-1 overflow-x-auto text-xs font-bold hide-scrollbar pb-px">
+      <button onclick="switchTab('tabJournalEntry')" id="nav-tabJournalEntry" class="tab-btn flex items-center gap-2 py-3 px-4 text-amber-400 border-b-2 border-amber-400 bg-amber-500/10 rounded-t-lg transition whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        Jurnal Umum (Double Entry)
+      </button>
+
+
+      <button onclick="switchTab('tabApprovalKasir')" id="nav-tabApprovalKasir" class="tab-btn flex items-center gap-2 py-3 px-4 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-900 rounded-t-lg transition whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+        Inbox Approval Kasir <span id="badgeKasirPendingCount" class="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">0</span>
+      </button>
+
+
+      <button onclick="switchTab('tabCoaManagement')" id="nav-tabCoaManagement" class="tab-btn flex items-center gap-2 py-3 px-4 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-900 rounded-t-lg transition whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        Master COA (Akun)
+      </button>
+
+
+      <button onclick="switchTab('tabLedger')" id="nav-tabLedger" class="tab-btn flex items-center gap-2 py-3 px-4 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-900 rounded-t-lg transition whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+        Buku Besar & Neraca Saldo
+      </button>
+
+
+      <button onclick="switchTab('tabReports')" id="nav-tabReports" class="tab-btn flex items-center gap-2 py-3 px-4 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-900 rounded-t-lg transition whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        Laporan Keuangan
+      </button>
+
+
+      <button onclick="switchTab('tabErpChat')" id="nav-tabErpChat" class="tab-btn flex items-center gap-2 py-3 px-4 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-900 rounded-t-lg transition whitespace-nowrap">💬 Chat Internal</button>
+<button onclick="switchTab('tabDailyClosing')" id="nav-tabDailyClosing" class="tab-btn flex items-center gap-2 py-3 px-4 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-900 rounded-t-lg transition whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        Tutup Periode Harian
+      </button>
+    </nav>
+
+
+    <!-- TAB CONTENTS CONTAINER -->
+    <div class="space-y-6">
+
+
+      <!-- TAB 1: JURNAL UMUM (DOUBLE ENTRY) -->
+      <section id="tabJournalEntry" class="tab-content animate-fade-in space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- Left: Double Entry Journal Input Form -->
+          <div class="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-slate-900 border-b border-slate-800 px-5 py-4 flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-amber-400 text-sm flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                  Form Entry Jurnal umum (Double Entry)
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Pengajuan oleh Akuntan akan dikirim ke <b>Admin Perusahaan</b> untuk disetujui.</p>
+              </div>
+              <span class="text-[10px] font-bold uppercase px-2 py-1 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">Target: Admin</span>
+            </div>
+
+
+            <form onsubmit="handleJournalSubmit(event)" class="p-5 space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Tanggal Jurnal</label>
+                  <input type="date" id="jDate" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-amber-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">No. Bukti / Referensi <span class="text-amber-400">*</span></label>
+                  <input type="text" id="jNoBukti" placeholder="Misal: BKK-0509-001" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-amber-500 outline-none font-mono">
+                </div>
+              </div>
+
+
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Keterangan / Memori Transaksi</label>
+                <input type="text" id="jDescription" placeholder="Contoh: Pembayaran Biaya Sewa Kantor September 2026" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-amber-500 outline-none">
+              </div>
+
+
+              <!-- Lines Table for Debit & Credit -->
+              <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
+                <div class="bg-slate-900/80 px-3 py-2 border-b border-slate-800 flex justify-between items-center text-xs font-bold text-slate-300">
+                  <span>Rincian Ayat Jurnal (Min. 1 Debit & 1 Kredit)</span>
+                  <button type="button" onclick="addJournalRow()" class="text-amber-400 hover:text-amber-300 text-[11px] flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Tambah Baris
+                  </button>
+                </div>
+                
+                <div class="p-2 space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar" id="journalRowsContainer">
+                  <!-- Dynamic rows will be rendered here -->
+                </div>
+
+
+                <div class="bg-slate-900/80 p-3 border-t border-slate-800 flex flex-wrap justify-between items-center text-xs">
+                  <div class="space-x-4 font-mono font-bold">
+                    <span>Tot. Debit: <span id="totDebitDisplay" class="text-emerald-400">Rp 0</span></span>
+                    <span>Tot. Kredit: <span id="totCreditDisplay" class="text-rose-400">Rp 0</span></span>
+                  </div>
+                  <div id="journalBalanceBadge" class="text-[10px] font-black uppercase px-2 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                    TIDAK SEIMBANG
+                  </div>
+                </div>
+              </div>
+
+
+              <button type="submit" id="btnSubmitJournal" disabled class="w-full bg-slate-800 text-slate-500 font-bold py-3 rounded-xl text-xs transition cursor-not-allowed">
+                Kirim Transaksi ke Admin Perusahaan
+              </button>
+            </form>
+          </div>
+
+
+          <!-- Right: History / Existing Journals -->
+          <div class="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden flex flex-col h-[580px]">
+            <div class="bg-slate-900 border-b border-slate-800 px-5 py-4 flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-slate-200 text-sm">Daftar Transaksi Jurnal & Status Approval</h3>
+                <p class="text-[11px] text-slate-400">Monitoring status pengajuan Akuntan & hasil posting</p>
+              </div>
+              <input type="text" id="searchJournalInput" onkeyup="renderJournalHistoryTable()" placeholder="Cari No.Bukti/Ket..." class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1 text-xs text-slate-200 outline-none focus:border-amber-500">
+            </div>
+
+
+            <div class="overflow-auto flex-1 p-0 custom-scrollbar">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-950/90 text-slate-400 font-bold uppercase tracking-wider sticky top-0 z-10 border-b border-slate-800">
+                  <tr>
+                    <th class="p-3">No. Bukti / Tgl</th>
+                    <th class="p-3">Pengaju & Keterangan</th>
+                    <th class="p-3 text-right">Nominal</th>
+                    <th class="p-3 text-center">Status / Approval</th>
+                  </tr>
+                </thead>
+                <tbody id="journalHistoryTable" class="divide-y divide-slate-800/60 text-slate-300 font-mono">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- TAB 2: INBOX APPROVAL KASIR -->
+      <section id="tabApprovalKasir" class="tab-content hidden animate-fade-in space-y-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start h-[620px]">
+          
+          <!-- Left Column: Pending Kasir Submissions List -->
+          <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl flex flex-col h-full overflow-hidden">
+            <div class="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center">
+              <div>
+                <h4 class="font-bold text-sm text-amber-400">Antrean Pengajuan Kasir</h4>
+                <p class="text-[10px] text-slate-400">Disetujui/Ditolak langsung oleh Akuntan</p>
+              </div>
+              <span id="badgeKasirPendingTab" class="bg-amber-500 text-slate-950 px-2 py-0.5 rounded text-[10px] font-black">0</span>
+            </div>
+            
+            <div id="kasirQueueList" class="p-3 space-y-2.5 overflow-y-auto flex-1 custom-scrollbar">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+
+          <!-- Right Column: Inspection & Action Panel -->
+          <div class="lg:col-span-8 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl flex flex-col h-full overflow-hidden">
+            <div class="bg-slate-900 border-b border-slate-800 p-4">
+              <h4 class="font-bold text-sm text-sky-400 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                Panel Verifikasi & Approval Akuntan
+              </h4>
+            </div>
+            
+            <div id="kasirInspectionPanel" class="p-5 flex-1 overflow-y-auto custom-scrollbar">
+              <!-- Rendered via JS based on selected item -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- TAB 3: MANAJEMEN COA (CHART OF ACCOUNTS) -->
+      <section id="tabCoaManagement" class="tab-content hidden animate-fade-in space-y-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <h3 class="font-bold text-lg text-white flex items-center gap-2">
+                Chart of Accounts (Bagan Akun Standar)
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Kelola Akun Aset, Kewajiban, Ekuitas, Pendapatan, dan Beban. Dapat ditambah, diedit, dan dihapus.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openCoaModal('add')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Tambah Akun Baru
+              </button>
+            </div>
+          </div>
+
+
+          <!-- Filter & Search Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 overflow-x-auto text-xs hide-scrollbar">
+              <button onclick="filterCoaCategory('ALL')" class="coa-cat-btn px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold">Semua</button>
+              <button onclick="filterCoaCategory('ASET')" class="coa-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Aset</button>
+              <button onclick="filterCoaCategory('KEWAJIBAN')" class="coa-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Kewajiban</button>
+              <button onclick="filterCoaCategory('EKUITAS')" class="coa-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Ekuitas</button>
+              <button onclick="filterCoaCategory('PENDAPATAN')" class="coa-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Pendapatan</button>
+              <button onclick="filterCoaCategory('BEBAN')" class="coa-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Beban</button>
+            </div>
+            <input type="text" id="searchCoaInput" onkeyup="renderCoaTable()" placeholder="Cari Kode atau Nama Akun..." class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-1.5 text-xs text-white outline-none focus:border-amber-500">
+          </div>
+
+
+          <!-- COA Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-3.5">Kode Akun</th>
+                  <th class="p-3.5">Nama Akun Keuangan</th>
+                  <th class="p-3.5">Kategori</th>
+                  <th class="p-3.5">Saldo Normal</th>
+                  <th class="p-3.5 text-right">Saldo Saat Ini</th>
+                  <th class="p-3.5 text-center">Aksi (Edit / Hapus)</th>
+                </tr>
+              </thead>
+              <tbody id="coaTableBody" class="divide-y divide-slate-800/80 text-slate-200 font-mono">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- TAB 4: BUKU BESAR & NERACA SALDO -->
+      <section id="tabLedger" class="tab-content hidden animate-fade-in space-y-6">
+        
+        <!-- General Ledger Header & Selector -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <h3 class="font-bold text-lg text-white">Buku Besar (General Ledger)</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Rincian mutasi transaksi dan akumulasi saldo running per akun</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="text-xs font-bold text-slate-400 uppercase">Pilih Akun:</label>
+              <select id="ledgerCoaSelect" onchange="renderGeneralLedger()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-amber-400 outline-none focus:border-amber-500">
+                <!-- Dynamic options -->
+              </select>
+            </div>
+          </div>
+
+
+          <!-- Ledger Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Tanggal</th>
+                  <th class="p-3">No. Bukti</th>
+                  <th class="p-3">Keterangan</th>
+                  <th class="p-3 text-right text-emerald-400">Debit (Rp)</th>
+                  <th class="p-3 text-right text-rose-400">Kredit (Rp)</th>
+                  <th class="p-3 text-right">Saldo Akhir (Rp)</th>
+                </tr>
+              </thead>
+              <tbody id="ledgerTableBody" class="divide-y divide-slate-800/80 text-slate-200 font-mono">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <!-- Trial Balance (Neraca Saldo) -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+            <div>
+              <h3 class="font-bold text-lg text-white">Neraca Saldo (Trial Balance)</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Ringkasan total saldo Debit & Kredit seluruh akun aktif</p>
+            </div>
+            <span id="tbBalanceBadge" class="px-3 py-1 rounded-lg font-black text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              SEIMBANG / BALANCED
+            </span>
+          </div>
+
+
+          <div class="overflow-x-auto rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Kode Akun</th>
+                  <th class="p-3">Nama Akun</th>
+                  <th class="p-3 text-right text-emerald-400">Debit (Rp)</th>
+                  <th class="p-3 text-right text-rose-400">Kredit (Rp)</th>
+                </tr>
+              </thead>
+              <tbody id="trialBalanceBody" class="divide-y divide-slate-800/80 text-slate-200 font-mono">
+                <!-- Dynamic -->
+              </tbody>
+              <tfoot class="bg-slate-950 font-mono font-bold text-sm text-white border-t-2 border-slate-700">
+                <tr>
+                  <td colspan="2" class="p-3 text-right uppercase">Total Neraca Saldo:</td>
+                  <td id="tbTotalDebit" class="p-3 text-right text-emerald-400">Rp 0</td>
+                  <td id="tbTotalCredit" class="p-3 text-right text-rose-400">Rp 0</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- TAB 5: LAPORAN KEUANGAN AUTOMATED -->
+      <section id="tabReports" class="tab-content hidden animate-fade-in space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Laporan Laba Rugi -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+            <div class="border-b border-slate-800 pb-3">
+              <h3 class="font-bold text-lg text-amber-400">Laporan Laba Rugi (Income Statement)</h3>
+              <p class="text-xs text-slate-400">Total Pendapatan dikurangi Total Beban Operasional</p>
+            </div>
+
+
+            <div class="space-y-3 text-xs font-mono">
+              <div>
+                <p class="text-slate-400 font-bold uppercase mb-2">1. Pendapatan Operasional</p>
+                <div id="reportRevenueList" class="space-y-1 pl-3 border-l-2 border-emerald-500/40">
+                  <!-- Dynamic -->
+                </div>
+                <div class="flex justify-between font-bold text-emerald-400 pt-2 border-t border-slate-800 mt-2">
+                  <span>TOTAL PENDAPATAN:</span>
+                  <span id="reportTotalRevenue">Rp 0</span>
+                </div>
+              </div>
+
+
+              <div class="pt-2">
+                <p class="text-slate-400 font-bold uppercase mb-2">2. Beban Operasional</p>
+                <div id="reportExpenseList" class="space-y-1 pl-3 border-l-2 border-rose-500/40">
+                  <!-- Dynamic -->
+                </div>
+                <div class="flex justify-between font-bold text-rose-400 pt-2 border-t border-slate-800 mt-2">
+                  <span>TOTAL BEBAN:</span>
+                  <span id="reportTotalExpense">Rp 0</span>
+                </div>
+              </div>
+
+
+              <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-sm font-bold">
+                <span class="uppercase">Laba (Rugi) Bersih:</span>
+                <span id="reportNetIncome" class="text-emerald-400 text-lg">Rp 0</span>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- Laporan Neraca Ringkas -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+            <div class="border-b border-slate-800 pb-3">
+              <h3 class="font-bold text-lg text-sky-400">Ringkasan Neraca (Balance Sheet)</h3>
+              <p class="text-xs text-slate-400">Aset = Kewajiban + Ekuitas (Termasuk Laba berjalan)</p>
+            </div>
+
+
+            <div class="space-y-3 text-xs font-mono">
+              <div>
+                <p class="text-slate-400 font-bold uppercase mb-2">Aset (Aktiva)</p>
+                <div id="reportAssetList" class="space-y-1 pl-3 border-l-2 border-sky-500/40">
+                  <!-- Dynamic -->
+                </div>
+                <div class="flex justify-between font-bold text-sky-400 pt-2 border-t border-slate-800 mt-2">
+                  <span>TOTAL ASET:</span>
+                  <span id="reportTotalAssets">Rp 0</span>
+                </div>
+              </div>
+
+
+              <div class="pt-2">
+                <p class="text-slate-400 font-bold uppercase mb-2">Kewajiban & Ekuitas (Pasiva)</p>
+                <div id="reportLiabilityEquityList" class="space-y-1 pl-3 border-l-2 border-amber-500/40">
+                  <!-- Dynamic -->
+                </div>
+                <div class="flex justify-between font-bold text-amber-400 pt-2 border-t border-slate-800 mt-2">
+                  <span>TOTAL KEWAJIBAN & EKUITAS:</span>
+                  <span id="reportTotalLiabilityEquity">Rp 0</span>
+                </div>
+              </div>
+
+
+              <div id="balanceSheetStatusBox" class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-sm font-bold">
+                <span class="uppercase">Status Keseimbangan:</span>
+                <span id="reportBalanceCheck" class="text-emerald-400">SEIMBANG (BALANCED)</span>
+              </div>
+            </div>
+          </div>
+
+
+        </div>
+      </section>
+
+
+      <!-- TAB 6: TUTUP PERIODE HARIAN -->
+      <section id="tabDailyClosing" class="tab-content hidden animate-fade-in space-y-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 lg:w-2/3 mx-auto shadow-xl relative overflow-hidden space-y-6">
+          <div class="flex items-center gap-4 border-b border-slate-800 pb-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-white">Prosedur Tutup Periode Harian (Daily Closing)</h3>
+              <p class="text-xs text-slate-400">Mengunci mutasi kas & jurnal harian agar tidak dapat diubah tanpa jurnal koreksi.</p>
+            </div>
+          </div>
+
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+            <p class="text-xs font-bold text-amber-400 uppercase tracking-wider">Syarat Checklist Penutupan Harian</p>
+            <div class="space-y-3 text-xs text-slate-300">
+              <label class="flex items-center space-x-3 cursor-pointer group">
+                <input type="checkbox" onchange="checkDailyClosureRequirements()" class="daily-check w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0">
+                <span class="group-hover:text-amber-400 transition">Seluruh transaksi Kasir hari ini sudah di-approve / ditolak oleh Akuntan.</span>
+              </label>
+              <label class="flex items-center space-x-3 cursor-pointer group">
+                <input type="checkbox" onchange="checkDailyClosureRequirements()" class="daily-check w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0">
+                <span class="group-hover:text-amber-400 transition">Hasil Kas Opnam fisik sesuai dengan Saldo Buku Kas Bank.</span>
+              </label>
+              <label class="flex items-center space-x-3 cursor-pointer group">
+                <input type="checkbox" onchange="checkDailyClosureRequirements()" class="daily-check w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0">
+                <span class="group-hover:text-amber-400 transition">Neraca Saldo (Trial Balance) dalam kondisi Seimbang (Balanced).</span>
+              </label>
+            </div>
+          </div>
+
+
+          <button id="btnDailyCloseSubmit" disabled class="w-full bg-slate-800 text-slate-500 font-bold py-4 rounded-xl text-xs transition cursor-not-allowed">
+            Selesaikan Seluruh Checklist Untuk Kunci Periode Hari Ini
+          </button>
+        </div>
+      </section>
+
+
+    
+<section id="tab-tabErpChat" class="tab-content hidden space-y-5 animate-fade-in">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div><h3 class="font-bold text-lg text-white">Chat Internal ERP</h3><p class="text-xs text-slate-400">Pesan disimpan di Google Sheet <b>Chats</b>. Pilih penerima berdasarkan pengguna atau role.</p></div>
+    <div id="erpChatStatus" class="text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">TERHUBUNG</div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div class="lg:col-span-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3">
+      <div class="flex gap-2"><select id="erpChatRoleFilter" onchange="erpChatRenderUsers()" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"><option value="ALL">Semua Role</option><option value="SUPER_ADMIN">Super Admin</option><option value="ADMIN_PERUSAHAAN">Admin Perusahaan</option><option value="AKUNTAN">Akuntan</option><option value="KASIR">Kasir</option><option value="MANAJEMEN_PUNCAK">Manajemen Puncak</option></select><button onclick="erpChatRefresh()" class="px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs">↻</button></div>
+      <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 cursor-pointer" onclick="erpChatSelect('ALL','ALL','Semua Pengguna')"><div class="font-bold text-xs text-indigo-200">📢 Semua Pengguna</div><div class="text-[10px] text-slate-400">Pesan internal umum</div></div>
+      <div id="erpChatUsers" class="space-y-2 max-h-[55vh] overflow-y-auto custom-scrollbar"></div>
+    </div>
+    <div class="lg:col-span-8 bg-slate-900/80 border border-slate-800 rounded-2xl min-h-[60vh] flex flex-col overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800"><div id="erpChatTargetTitle" class="font-bold text-sm text-white">Semua Pengguna</div><div id="erpChatTargetSub" class="text-[10px] text-slate-500">Broadcast internal</div></div>
+      <div id="erpChatMessages" class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-3"></div>
+      <form onsubmit="erpChatSend(event)" class="p-4 border-t border-slate-800 flex gap-2"><input id="erpChatInput" autocomplete="off" placeholder="Tulis pesan..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"><button class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold">Kirim</button></form>
+    </div>
+  </div>
+  <div id="erpBroadcastFeed" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4"><div class="font-bold text-sm text-white mb-3">Broadcast Super Admin</div><div id="erpBroadcastItems" class="space-y-2"></div></div>
+</section>
+
+</div>
+  </main>
+
+
+  <!-- MODAL FOR COA ADD / EDIT -->
+  <div id="coaModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4 animate-fade-in">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 id="coaModalTitle" class="font-bold text-white text-sm">Tambah Akun COA Baru</h3>
+        <button onclick="closeCoaModal()" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+
+      <form onsubmit="saveCoaForm(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="coaModalMode" value="add">
+        <input type="hidden" id="coaOldCode" value="">
+
+
+        <div>
+          <label class="block font-bold text-slate-400 uppercase mb-1">Kode Akun</label>
+          <input type="text" id="coaFormCode" placeholder="Misal: 1105" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white font-mono outline-none focus:border-amber-500">
+        </div>
+
+
+        <div>
+          <label class="block font-bold text-slate-400 uppercase mb-1">Nama Akun Keuangan</label>
+          <input type="text" id="coaFormName" placeholder="Misal: Kas Kecil Operasional" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-amber-500">
+        </div>
+
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-400 uppercase mb-1">Kategori</label>
+            <select id="coaFormCategory" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-amber-500">
+              <option value="ASET">ASET</option>
+              <option value="KEWAJIBAN">KEWAJIBAN</option>
+              <option value="EKUITAS">EKUITAS</option>
+              <option value="PENDAPATAN">PENDAPATAN</option>
+              <option value="BEBAN">BEBAN</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-400 uppercase mb-1">Saldo Normal</label>
+            <select id="coaFormNormal" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-amber-500">
+              <option value="DEBIT">DEBIT</option>
+              <option value="KREDIT">KREDIT</option>
+            </select>
+          </div>
+        </div>
+
+
+        <div>
+          <label class="block font-bold text-slate-400 uppercase mb-1">Saldo Awal (Rp)</label>
+          <input type="number" id="coaFormInitial" value="0" min="0" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white font-mono outline-none focus:border-amber-500">
+        </div>
+
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" onclick="closeCoaModal()" class="flex-1 bg-slate-800 text-slate-300 font-bold py-2.5 rounded-xl">Batal</button>
+          <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl">Simpan Akun</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- CUSTOM NOTIFICATION TOAST -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden max-w-sm bg-slate-900 border border-slate-700 text-white p-4 rounded-xl shadow-2xl flex items-center gap-3 animate-fade-in">
+    <div id="toastIcon" class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">✓</div>
+    <div>
+      <p id="toastTitle" class="font-bold text-xs">Pemberitahuan</p>
+      <p id="toastMessage" class="text-[11px] text-slate-400">Pesan sukses terkirim.</p>
+    </div>
+  </div>
+
+
+  <script>
+    // MASTER COA DATA IN-MEMORY
+    let coaList = [
+      { code: '1101', name: 'Kas Utama Kasir', category: 'ASET', normal: 'DEBIT', initial: 15000000, isSystem: true },
+      { code: '1102', name: 'Bank BCA Operasional', category: 'ASET', normal: 'DEBIT', initial: 50000000, isSystem: true },
+      { code: '1103', name: 'Piutang Usaha', category: 'ASET', normal: 'DEBIT', initial: 5000000, isSystem: false },
+      { code: '2101', name: 'Hutang Usaha Vendor', category: 'KEWAJIBAN', normal: 'KREDIT', initial: 8000000, isSystem: false },
+      { code: '3101', name: 'Modal Disetor Owner', category: 'EKUITAS', normal: 'KREDIT', initial: 62000000, isSystem: true },
+      { code: '4101', name: 'Pendapatan Penjualan Kasir', category: 'PENDAPATAN', normal: 'KREDIT', initial: 0, isSystem: true },
+      { code: '6101', name: 'Beban Perlengkapan & ATK', category: 'BEBAN', normal: 'DEBIT', initial: 0, isSystem: false },
+      { code: '6102', name: 'Beban Sewa Kantor', category: 'BEBAN', normal: 'DEBIT', initial: 0, isSystem: false },
+      { code: '6103', name: 'Beban Perjalanan Dinas', category: 'BEBAN', normal: 'DEBIT', initial: 0, isSystem: false }
+    ];
+
+
+    // TRANSACTIONS DATA IN-MEMORY
+    let transactions = [
+      {
+        id: 'TRX-KASIR-001',
+        noBukti: 'KSR-0509-01',
+        date: '2026-09-05',
+        submittedBy: 'Siti Kasir (Toko Utama)',
+        sourceRole: 'kasir',
+        status: 'PENDING_AKUNTAN',
+        description: 'Setoran Hasil Penjualan Tunai Shift Pagi',
+        amount: 2500000,
+        entries: [
+          { coaCode: '1101', debit: 2500000, credit: 0 },
+          { coaCode: '4101', debit: 0, credit: 2500000 }
+        ],
+        notes: 'Uang fisik sudah masuk ke brankas kasir.'
+      },
+      {
+        id: 'TRX-KASIR-002',
+        noBukti: 'KSR-0509-02',
+        date: '2026-09-05',
+        submittedBy: 'Budi Kasir',
+        sourceRole: 'kasir',
+        status: 'PENDING_AKUNTAN',
+        description: 'Pengeluaran Pembelian Kertas Struk & Air Mineral',
+        amount: 150000,
+        entries: [
+          { coaCode: '6101', debit: 150000, credit: 0 },
+          { coaCode: '1101', debit: 0, credit: 150000 }
+        ],
+        notes: 'Nota pembelian terlampir fisik di kasir.'
+      },
+      {
+        id: 'TRX-ACCT-001',
+        noBukti: 'BKK-0509-99',
+        date: '2026-09-05',
+        submittedBy: 'Akuntan Perusahaan',
+        sourceRole: 'akuntan',
+        status: 'PENDING_ADMIN',
+        description: 'Pembayaran Sewa Gedung Kantor Bulan September',
+        amount: 10000000,
+        entries: [
+          { coaCode: '6102', debit: 10000000, credit: 0 },
+          { coaCode: '1102', debit: 0, credit: 10000000 }
+        ],
+        notes: 'Jurnal oleh Akuntan - Menunggu approval Admin.'
+      }
+    ];
+
+
+    let selectedKasirTxId = null;
+    let selectedCoaCategoryFilter = 'ALL';
+    let journalRowCounter = 0;
+
+
+    // INIT PAGE
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('jDate').valueAsDate = new Date();
+      initJournalFormRows();
+      renderAll();
+    });
+
+
+    function showToast(title, msg, type = 'success') {
+      const toast = document.getElementById('toastNotification');
+      const icon = document.getElementById('toastIcon');
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastMessage').textContent = msg;
+
+
+      if (type === 'error') {
+        icon.className = "w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-sm";
+        icon.textContent = "✕";
+      } else {
+        icon.className = "w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm";
+        icon.textContent = "✓";
+      }
+
+
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-amber-400', 'border-amber-400', 'bg-amber-500/10');
+        btn.classList.add('text-slate-400', 'border-transparent');
+      });
+
+
+      document.getElementById(tabId).classList.remove('hidden');
+      const activeBtn = document.getElementById('nav-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400', 'border-transparent');
+        activeBtn.classList.add('text-amber-400', 'border-amber-400', 'bg-amber-500/10');
+      }
+
+
+      renderAll();
+    }
+
+
+    function renderAll() {
+      updateKPIs();
+      renderJournalHistoryTable();
+      renderKasirApprovalList();
+      renderCoaTable();
+      populateLedgerCoaDropdown();
+      renderGeneralLedger();
+      renderTrialBalance();
+      renderFinancialReports();
+    }
+
+
+    // DOUBLE ENTRY JOURNAL FORM
+    function initJournalFormRows() {
+      const container = document.getElementById('journalRowsContainer');
+      container.innerHTML = '';
+      journalRowCounter = 0;
+      addJournalRow('DEBIT');
+      addJournalRow('KREDIT');
+    }
+
+
+    function addJournalRow(defaultPosition = 'DEBIT') {
+      const container = document.getElementById('journalRowsContainer');
+      const rowId = 'jRow_' + journalRowCounter++;
+      
+      let coaOptionsHtml = '<option value="">-- Pilih Akun COA --</option>';
+      coaList.forEach(c => {
+        coaOptionsHtml += `<option value="${c.code}">${c.code} - ${c.name}</option>`;
+      });
+
+
+      const rowHtml = `
+        <div id="${rowId}" class="grid grid-cols-12 gap-2 items-center bg-slate-900 p-2 rounded-lg border border-slate-800">
+          <div class="col-span-5">
+            <select class="j-coa-select w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-white outline-none" required>
+              ${coaOptionsHtml}
+            </select>
+          </div>
+          <div class="col-span-3">
+            <input type="number" min="0" placeholder="Debit (Rp)" oninput="calcJournalTotals()" class="j-debit-input w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs font-mono text-emerald-400 outline-none" ${defaultPosition === 'KREDIT' ? 'disabled value="0"' : ''}>
+          </div>
+          <div class="col-span-3">
+            <input type="number" min="0" placeholder="Kredit (Rp)" oninput="calcJournalTotals()" class="j-credit-input w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs font-mono text-rose-400 outline-none" ${defaultPosition === 'DEBIT' ? 'disabled value="0"' : ''}>
+          </div>
+          <div class="col-span-1 text-center">
+            <button type="button" onclick="removeJournalRow('${rowId}')" class="text-slate-500 hover:text-rose-400 text-sm font-bold">&times;</button>
+          </div>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', rowHtml);
+      calcJournalTotals();
+    }
+
+
+    function removeJournalRow(rowId) {
+      const rows = document.querySelectorAll('#journalRowsContainer > div');
+      if (rows.length <= 2) {
+        showToast("Peringatan", "Jurnal Double Entry minimal membutuhkan 2 baris (1 Debit & 1 Kredit)", "error");
+        return;
+      }
+      document.getElementById(rowId)?.remove();
+      calcJournalTotals();
+    }
+
+
+    function calcJournalTotals() {
+      let totDebit = 0;
+      let totCredit = 0;
+
+
+      const debitInputs = document.querySelectorAll('.j-debit-input');
+      const creditInputs = document.querySelectorAll('.j-credit-input');
+
+
+      debitInputs.forEach(i => {
+        const val = parseFloat(i.value) || 0;
+        if (!i.disabled) totDebit += val;
+      });
+
+
+      creditInputs.forEach(i => {
+        const val = parseFloat(i.value) || 0;
+        if (!i.disabled) totCredit += val;
+      });
+
+
+      document.getElementById('totDebitDisplay').textContent = 'Rp ' + totDebit.toLocaleString('id-ID');
+      document.getElementById('totCreditDisplay').textContent = 'Rp ' + totCredit.toLocaleString('id-ID');
+
+
+      const submitBtn = document.getElementById('btnSubmitJournal');
+      const badge = document.getElementById('journalBalanceBadge');
+
+
+      if (totDebit > 0 && totDebit === totCredit) {
+        badge.className = "text-[10px] font-black uppercase px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+        badge.textContent = "SEIMBANG (BALANCED)";
+        submitBtn.disabled = false;
+        submitBtn.className = "w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer";
+      } else {
+        badge.className = "text-[10px] font-black uppercase px-2 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30";
+        badge.textContent = "TIDAK SEIMBANG";
+        submitBtn.disabled = true;
+        submitBtn.className = "w-full bg-slate-800 text-slate-500 font-bold py-3 rounded-xl text-xs transition cursor-not-allowed";
+      }
+    }
+
+
+    function handleJournalSubmit(e) {
+      e.preventDefault();
+      const date = document.getElementById('jDate').value;
+      const noBukti = document.getElementById('jNoBukti').value.trim();
+      const description = document.getElementById('jDescription').value.trim();
+
+
+      const rows = document.querySelectorAll('#journalRowsContainer > div');
+      let entries = [];
+      let totalAmount = 0;
+
+
+      for (let r of rows) {
+        const coaCode = r.querySelector('.j-coa-select').value;
+        const debitVal = parseFloat(r.querySelector('.j-debit-input').value) || 0;
+        const creditVal = parseFloat(r.querySelector('.j-credit-input').value) || 0;
+
+
+        if (!coaCode) {
+          showToast("Error", "Semua baris jurnal wajib memilih Akun COA!", "error");
+          return;
+        }
+
+
+        if (debitVal > 0) totalAmount += debitVal;
+
+
+        entries.push({ coaCode, debit: debitVal, credit: creditVal });
+      }
+
+
+      const newTx = {
+        id: 'TRX-ACCT-' + String(Date.now()).slice(-4),
+        noBukti: noBukti,
+        date: date,
+        submittedBy: 'Akuntan Perusahaan',
+        sourceRole: 'akuntan',
+        status: 'PENDING_ADMIN',
+        description: description,
+        amount: totalAmount,
+        entries: entries,
+        notes: 'Diajukan oleh Akuntan. Menunggu persetujuan Admin Perusahaan.'
+      };
+
+
+      transactions.unshift(newTx);
+      showToast("Berhasil Diajukan!", `Transaksi ${noBukti} telah dikirim ke Admin Perusahaan.`);
+      
+      document.getElementById('jNoBukti').value = '';
+      document.getElementById('jDescription').value = '';
+      initJournalFormRows();
+      renderAll();
+    }
+
+
+    function renderJournalHistoryTable() {
+      const tbody = document.getElementById('journalHistoryTable');
+      const search = document.getElementById('searchJournalInput')?.value.toLowerCase() || '';
+
+
+      const filtered = transactions.filter(t => 
+        t.noBukti.toLowerCase().includes(search) || 
+        t.description.toLowerCase().includes(search) ||
+        t.submittedBy.toLowerCase().includes(search)
+      );
+
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Belum ada data jurnal.</td></tr>`;
+        return;
+      }
+
+
+      tbody.innerHTML = filtered.map(t => {
+        let badgeClass = '';
+        let badgeText = '';
+
+
+        if (t.status === 'PENDING_ADMIN') {
+          badgeClass = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+          badgeText = 'MENUNGGU ADMIN';
+        } else if (t.status === 'PENDING_AKUNTAN') {
+          badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+          badgeText = 'MENUNGGU AKUNTAN';
+        } else if (t.status === 'APPROVED') {
+          badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+          badgeText = 'POSTED / APPROVED';
+        } else if (t.status === 'REJECTED') {
+          badgeClass = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+          badgeText = 'DITOLAK';
+        }
+
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="p-3">
+              <span class="font-bold text-amber-400 block">${t.noBukti}</span>
+              <span class="text-[10px] text-slate-500">${t.date}</span>
+            </td>
+            <td class="p-3">
+              <p class="font-sans text-xs text-slate-200 line-clamp-1">${t.description}</p>
+              <p class="text-[10px] text-slate-400 font-sans">Oleh: ${t.submittedBy}</p>
+            </td>
+            <td class="p-3 text-right font-bold text-slate-200">
+              Rp ${t.amount.toLocaleString('id-ID')}
+            </td>
+            <td class="p-3 text-center">
+              <span class="px-2 py-0.5 text-[9px] font-bold rounded border uppercase ${badgeClass}">${badgeText}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+
+    // KASIR APPROVAL WORKFLOW IN AKUNTAN WORKSTATION
+    function renderKasirApprovalList() {
+      const container = document.getElementById('kasirQueueList');
+      const pendingKasir = transactions.filter(t => t.sourceRole === 'kasir' && t.status === 'PENDING_AKUNTAN');
+
+
+      document.getElementById('badgeKasirPendingCount').textContent = pendingKasir.length;
+      document.getElementById('badgeKasirPendingTab').textContent = pendingKasir.length + ' PENDING';
+
+
+      if (pendingKasir.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-slate-500 text-xs">
+            <svg class="w-8 h-8 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Tidak ada pengajuan kasir yang perlu di-approve saat ini.
+          </div>
+        `;
+        document.getElementById('kasirInspectionPanel').innerHTML = `
+          <div class="h-full flex items-center justify-center text-slate-500 text-xs">Pilih transaksi dari antrean kiri untuk ditinjau.</div>
+        `;
+        return;
+      }
+
+
+      if (!selectedKasirTxId || !pendingKasir.find(t => t.id === selectedKasirTxId)) {
+        selectedKasirTxId = pendingKasir[0].id;
+      }
+
+
+      container.innerHTML = pendingKasir.map(t => {
+        const isSelected = t.id === selectedKasirTxId;
+        return `
+          <div onclick="selectKasirTx('${t.id}')" class="p-3 rounded-xl cursor-pointer transition border ${isSelected ? 'bg-amber-500/10 border-amber-500/50' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}">
+            <div class="flex justify-between items-start mb-1">
+              <span class="font-mono text-xs font-bold text-amber-400">${t.noBukti}</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">Kasir</span>
+            </div>
+            <p class="text-xs font-semibold text-slate-200 line-clamp-1 mb-1">${t.description}</p>
+            <div class="flex justify-between items-end font-mono">
+              <span class="text-xs font-bold text-emerald-400">Rp ${t.amount.toLocaleString('id-ID')}</span>
+              <span class="text-[10px] text-slate-500">${t.date}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+
+      renderInspectionPanel();
+    }
+
+
+    function selectKasirTx(id) {
+      selectedKasirTxId = id;
+      renderKasirApprovalList();
+    }
+
+
+    function renderInspectionPanel() {
+      const panel = document.getElementById('kasirInspectionPanel');
+      const tx = transactions.find(t => t.id === selectedKasirTxId);
+
+
+      if (!tx) {
+        panel.innerHTML = `<div class="p-6 text-slate-500 text-xs">Pilih transaksi dari antrean kasir.</div>`;
+        return;
+      }
+
+
+      let entriesHtml = tx.entries.map(e => {
+        const coa = coaList.find(c => c.code === e.coaCode);
+        return `
+          <tr class="border-b border-slate-800/60 font-mono">
+            <td class="py-2">${e.coaCode} - ${coa ? coa.name : 'Unknown'}</td>
+            <td class="py-2 text-right text-emerald-400">${e.debit > 0 ? 'Rp ' + e.debit.toLocaleString('id-ID') : '-'}</td>
+            <td class="py-2 text-right text-rose-400">${e.credit > 0 ? 'Rp ' + e.credit.toLocaleString('id-ID') : '-'}</td>
+          </tr>
+        `;
+      }).join('');
+
+
+      panel.innerHTML = `
+        <div class="space-y-5">
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-start">
+            <div>
+              <span class="text-[10px] font-mono font-bold text-amber-400 uppercase bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">${tx.noBukti}</span>
+              <h3 class="text-base font-bold text-white mt-1">${tx.description}</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Pengaju: <b>${tx.submittedBy}</b> • Tanggal: ${tx.date}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] text-slate-500 uppercase font-bold">Nominal Transaksi</p>
+              <p class="text-xl font-mono font-black text-emerald-400">Rp ${tx.amount.toLocaleString('id-ID')}</p>
+            </div>
+          </div>
+
+
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <p class="text-xs font-bold text-slate-300 uppercase mb-2">Pratinjau Jurnal Keuangan Kasir:</p>
+            <table class="w-full text-xs text-left">
+              <thead class="text-slate-500 border-b border-slate-800 pb-1">
+                <tr>
+                  <th class="py-1">Akun (COA)</th>
+                  <th class="py-1 text-right">Debit</th>
+                  <th class="py-1 text-right">Kredit</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${entriesHtml}
+              </tbody>
+            </table>
+          </div>
+
+
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Catatan Akuntan (Opsional):</label>
+            <textarea id="kasirAuditNote" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-500" placeholder="Catatan untuk Kasir..."></textarea>
+          </div>
+
+
+          <!-- Interactive Action Buttons -->
+          <div class="grid grid-cols-3 gap-3">
+            <button onclick="processKasirApproval('${tx.id}', 'APPROVED')" class="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-slate-950 font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              Setujui (Approve)
+            </button>
+
+
+            <button onclick="processKasirApproval('${tx.id}', 'REVISION')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold py-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+              Minta Revisi
+            </button>
+
+
+            <button onclick="processKasirApproval('${tx.id}', 'REJECTED')" class="bg-rose-950/60 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-800 font-bold py-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+              Tolak (Reject)
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+
+    function processKasirApproval(txId, newStatus) {
+      const tx = transactions.find(t => t.id === txId);
+      if (!tx) return;
+
+
+      const note = document.getElementById('kasirAuditNote')?.value || '';
+      tx.status = newStatus;
+      tx.notes = note || `Diperbarui oleh Akuntan (${newStatus})`;
+
+
+      if (newStatus === 'APPROVED') {
+        showToast("Transaksi Disetujui!", `Transaksi Kasir ${tx.noBukti} telah di-approve & di-post ke Ledger.`);
+      } else if (newStatus === 'REJECTED') {
+        showToast("Transaksi Ditolak", `Transaksi ${tx.noBukti} telah ditolak.`, "error");
+      } else {
+        showToast("Permintaan Revisi", `Kasir diminta merevisi transaksi ${tx.noBukti}.`);
+      }
+
+
+      selectedKasirTxId = null;
+      renderAll();
+    }
+
+
+    // CHART OF ACCOUNTS (COA) MANAGEMENT
+    function filterCoaCategory(cat) {
+      selectedCoaCategoryFilter = cat;
+      document.querySelectorAll('.coa-cat-btn').forEach(b => {
+        if (b.textContent.toUpperCase().includes(cat) || (cat === 'ALL' && b.textContent === 'Semua')) {
+          b.className = "coa-cat-btn px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold";
+        } else {
+          b.className = "coa-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700";
+        }
+      });
+      renderCoaTable();
+    }
+
+
+    function renderCoaTable() {
+      const tbody = document.getElementById('coaTableBody');
+      const search = document.getElementById('searchCoaInput')?.value.toLowerCase() || '';
+
+
+      let filtered = coaList;
+      if (selectedCoaCategoryFilter !== 'ALL') {
+        filtered = filtered.filter(c => c.category === selectedCoaCategoryFilter);
+      }
+
+
+      if (search) {
+        filtered = filtered.filter(c => c.code.toLowerCase().includes(search) || c.name.toLowerCase().includes(search));
+      }
+
+
+      tbody.innerHTML = filtered.map(c => {
+        const currentBalance = calculateAccountCurrentBalance(c.code);
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="p-3.5 font-bold text-amber-400">${c.code}</td>
+            <td class="p-3.5 font-sans font-semibold text-white">${c.name}</td>
+            <td class="p-3.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">${c.category}</span></td>
+            <td class="p-3.5 text-slate-400 text-xs">${c.normal}</td>
+            <td class="p-3.5 text-right font-bold text-emerald-400">Rp ${currentBalance.toLocaleString('id-ID')}</td>
+            <td class="p-3.5 text-center space-x-2">
+              <button onclick="openCoaModal('edit', '${c.code}')" class="text-sky-400 hover:text-sky-300 text-xs font-sans font-bold">Edit</button>
+              ${c.isSystem ? `<span class="text-slate-600 text-[10px] font-sans">Sistem</span>` : `<button onclick="deleteCoa('${c.code}')" class="text-rose-400 hover:text-rose-300 text-xs font-sans font-bold">Hapus</button>`}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+
+      document.getElementById('kpiTotalCoa').textContent = coaList.length;
+    }
+
+
+    function calculateAccountCurrentBalance(coaCode) {
+      const coa = coaList.find(c => c.code === coaCode);
+      if (!coa) return 0;
+
+
+      let balance = coa.initial || 0;
+
+
+      transactions.filter(t => t.status === 'APPROVED').forEach(t => {
+        t.entries.forEach(e => {
+          if (e.coaCode === coaCode) {
+            if (coa.normal === 'DEBIT') {
+              balance += (e.debit - e.credit);
+            } else {
+              balance += (e.credit - e.debit);
+            }
+          }
+        });
+      });
+
+
+      return balance;
+    }
+
+
+    function openCoaModal(mode, code = '') {
+      const modal = document.getElementById('coaModal');
+      document.getElementById('coaModalMode').value = mode;
+
+
+      if (mode === 'edit') {
+        const coa = coaList.find(c => c.code === code);
+        if (!coa) return;
+
+
+        document.getElementById('coaModalTitle').textContent = `Edit Akun COA [${coa.code}]`;
+        document.getElementById('coaOldCode').value = coa.code;
+        document.getElementById('coaFormCode').value = coa.code;
+        document.getElementById('coaFormName').value = coa.name;
+        document.getElementById('coaFormCategory').value = coa.category;
+        document.getElementById('coaFormNormal').value = coa.normal;
+        document.getElementById('coaFormInitial').value = coa.initial;
+      } else {
+        document.getElementById('coaModalTitle').textContent = 'Tambah Akun COA Baru';
+        document.getElementById('coaOldCode').value = '';
+        document.getElementById('coaFormCode').value = '';
+        document.getElementById('coaFormName').value = '';
+        document.getElementById('coaFormInitial').value = 0;
+      }
+
+
+      modal.classList.remove('hidden');
+    }
+
+
+    function closeCoaModal() {
+      document.getElementById('coaModal').classList.add('hidden');
+    }
+
+
+    function saveCoaForm(e) {
+      e.preventDefault();
+      const mode = document.getElementById('coaModalMode').value;
+      const oldCode = document.getElementById('coaOldCode').value;
+      const code = document.getElementById('coaFormCode').value.trim();
+      const name = document.getElementById('coaFormName').value.trim();
+      const category = document.getElementById('coaFormCategory').value;
+      const normal = document.getElementById('coaFormNormal').value;
+      const initial = parseFloat(document.getElementById('coaFormInitial').value) || 0;
+
+
+      if (mode === 'add') {
+        if (coaList.some(c => c.code === code)) {
+          showToast("Error", "Kode Akun sudah digunakan!", "error");
+          return;
+        }
+        coaList.push({ code, name, category, normal, initial, isSystem: false });
+        showToast("Berhasil", `Akun ${code} - ${name} berhasil ditambahkan.`);
+      } else {
+        const idx = coaList.findIndex(c => c.code === oldCode);
+        if (idx !== -1) {
+          coaList[idx].code = code;
+          coaList[idx].name = name;
+          coaList[idx].category = category;
+          coaList[idx].normal = normal;
+          coaList[idx].initial = initial;
+          showToast("Berhasil", `Akun ${code} berhasil diperbarui.`);
+        }
+      }
+
+
+      closeCoaModal();
+      renderAll();
+    }
+
+
+    function deleteCoa(code) {
+      const isUsed = transactions.some(t => t.entries.some(e => e.coaCode === code));
+      if (isUsed) {
+        showToast("Gagal Hapus", `Akun ${code} tidak dapat dihapus karena sudah memiliki histori transaksi!`, "error");
+        return;
+      }
+
+
+      coaList = coaList.filter(c => c.code !== code);
+      showToast("Berhasil Dihapus", `Akun ${code} berhasil dihapus.`);
+      renderAll();
+    }
+
+
+    // GENERAL LEDGER & TRIAL BALANCE
+    function populateLedgerCoaDropdown() {
+      const select = document.getElementById('ledgerCoaSelect');
+      const curVal = select.value;
+
+
+      select.innerHTML = coaList.map(c => `
+        <option value="${c.code}">${c.code} - ${c.name}</option>
+      `).join('');
+
+
+      if (curVal && coaList.some(c => c.code === curVal)) {
+        select.value = curVal;
+      }
+    }
+
+
+    function renderGeneralLedger() {
+      const select = document.getElementById('ledgerCoaSelect');
+      const coaCode = select.value || coaList[0]?.code;
+      const tbody = document.getElementById('ledgerTableBody');
+
+
+      if (!coaCode) return;
+
+
+      const coa = coaList.find(c => c.code === coaCode);
+      let runningBalance = coa.initial || 0;
+
+
+      let html = `
+        <tr class="bg-slate-950 font-bold">
+          <td class="p-3">-</td>
+          <td class="p-3">-</td>
+          <td class="p-3">SALDO AWAL KEUANGAN</td>
+          <td class="p-3 text-right text-emerald-400">-</td>
+          <td class="p-3 text-right text-rose-400">-</td>
+          <td class="p-3 text-right">Rp ${runningBalance.toLocaleString('id-ID')}</td>
+        </tr>
+      `;
+
+
+      const approvedTxs = transactions.filter(t => t.status === 'APPROVED');
+      
+      approvedTxs.forEach(t => {
+        t.entries.forEach(e => {
+          if (e.coaCode === coaCode) {
+            if (coa.normal === 'DEBIT') {
+              runningBalance += (e.debit - e.credit);
+            } else {
+              runningBalance += (e.credit - e.debit);
+            }
+
+
+            html += `
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="p-3 text-slate-400">${t.date}</td>
+                <td class="p-3 text-amber-400 font-bold">${t.noBukti}</td>
+                <td class="p-3 font-sans">${t.description}</td>
+                <td class="p-3 text-right text-emerald-400">${e.debit > 0 ? 'Rp ' + e.debit.toLocaleString('id-ID') : '-'}</td>
+                <td class="p-3 text-right text-rose-400">${e.credit > 0 ? 'Rp ' + e.credit.toLocaleString('id-ID') : '-'}</td>
+                <td class="p-3 text-right font-bold">Rp ${runningBalance.toLocaleString('id-ID')}</td>
+              </tr>
+            `;
+          }
+        });
+      });
+
+
+      tbody.innerHTML = html;
+    }
+
+
+    function renderTrialBalance() {
+      const tbody = document.getElementById('trialBalanceBody');
+      let totalDebit = 0;
+      let totalCredit = 0;
+
+
+      let rowsHtml = coaList.map(c => {
+        let debitVal = 0;
+        let creditVal = 0;
+
+
+        let bal = calculateAccountCurrentBalance(c.code);
+
+
+        if (c.normal === 'DEBIT') {
+          debitVal = bal;
+        } else {
+          creditVal = bal;
+        }
+
+
+        totalDebit += debitVal;
+        totalCredit += creditVal;
+
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="p-3 font-bold text-amber-400">${c.code}</td>
+            <td class="p-3 font-sans font-semibold">${c.name}</td>
+            <td class="p-3 text-right text-emerald-400">${debitVal !== 0 ? 'Rp ' + debitVal.toLocaleString('id-ID') : '-'}</td>
+            <td class="p-3 text-right text-rose-400">${creditVal !== 0 ? 'Rp ' + creditVal.toLocaleString('id-ID') : '-'}</td>
+          </tr>
+        `;
+      }).join('');
+
+
+      tbody.innerHTML = rowsHtml;
+      document.getElementById('tbTotalDebit').textContent = 'Rp ' + totalDebit.toLocaleString('id-ID');
+      document.getElementById('tbTotalCredit').textContent = 'Rp ' + totalCredit.toLocaleString('id-ID');
+
+
+      const isBalanced = totalDebit === totalCredit;
+      const badge = document.getElementById('tbBalanceBadge');
+      const kpiBadge = document.getElementById('kpiBalanceStatus');
+
+
+      if (isBalanced) {
+        badge.className = "px-3 py-1 rounded-lg font-black text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+        badge.textContent = "SEIMBANG / BALANCED";
+        kpiBadge.textContent = "BALANCED";
+        kpiBadge.className = "text-lg font-black text-emerald-400 uppercase mt-1";
+      } else {
+        badge.className = "px-3 py-1 rounded-lg font-black text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30";
+        badge.textContent = "UNBALANCED";
+        kpiBadge.textContent = "UNBALANCED";
+        kpiBadge.className = "text-lg font-black text-rose-400 uppercase mt-1";
+      }
+    }
+
+
+    // FINANCIAL REPORTS (LABA RUGI & NERACA)
+    function renderFinancialReports() {
+      let totalRevenue = 0;
+      let totalExpense = 0;
+
+
+      let revHtml = '';
+      let expHtml = '';
+
+
+      coaList.forEach(c => {
+        let bal = calculateAccountCurrentBalance(c.code);
+        if (c.category === 'PENDAPATAN') {
+          totalRevenue += bal;
+          revHtml += `<div class="flex justify-between"><span>${c.name} (${c.code})</span><span>Rp ${bal.toLocaleString('id-ID')}</span></div>`;
+        } else if (c.category === 'BEBAN') {
+          totalExpense += bal;
+          expHtml += `<div class="flex justify-between"><span>${c.name} (${c.code})</span><span>Rp ${bal.toLocaleString('id-ID')}</span></div>`;
+        }
+      });
+
+
+      document.getElementById('reportRevenueList').innerHTML = revHtml || `<span class="text-slate-600">Belum ada pendapatan.</span>`;
+      document.getElementById('reportExpenseList').innerHTML = expHtml || `<span class="text-slate-600">Belum ada beban.</span>`;
+      document.getElementById('reportTotalRevenue').textContent = 'Rp ' + totalRevenue.toLocaleString('id-ID');
+      document.getElementById('reportTotalExpense').textContent = 'Rp ' + totalExpense.toLocaleString('id-ID');
+
+
+      const netIncome = totalRevenue - totalExpense;
+      const netElem = document.getElementById('reportNetIncome');
+      netElem.textContent = 'Rp ' + netIncome.toLocaleString('id-ID');
+      netElem.className = netIncome >= 0 ? 'text-emerald-400 text-lg font-bold' : 'text-rose-400 text-lg font-bold';
+
+
+      // Balance Sheet
+      let totalAssets = 0;
+      let totalLiabilitiesEquities = 0;
+
+
+      let assetHtml = '';
+      let liabEqHtml = '';
+
+
+      coaList.forEach(c => {
+        let bal = calculateAccountCurrentBalance(c.code);
+        if (c.category === 'ASET') {
+          totalAssets += bal;
+          assetHtml += `<div class="flex justify-between"><span>${c.name}</span><span>Rp ${bal.toLocaleString('id-ID')}</span></div>`;
+        } else if (c.category === 'KEWAJIBAN' || c.category === 'EKUITAS') {
+          totalLiabilitiesEquities += bal;
+          liabEqHtml += `<div class="flex justify-between"><span>${c.name}</span><span>Rp ${bal.toLocaleString('id-ID')}</span></div>`;
+        }
+      });
+
+
+      // Add Current Net Income to Equity
+      totalLiabilitiesEquities += netIncome;
+      liabEqHtml += `<div class="flex justify-between text-amber-400 font-bold"><span>Laba Berjalan Periode Ini</span><span>Rp ${netIncome.toLocaleString('id-ID')}</span></div>`;
+
+
+      document.getElementById('reportAssetList').innerHTML = assetHtml;
+      document.getElementById('reportLiabilityEquityList').innerHTML = liabEqHtml;
+      document.getElementById('reportTotalAssets').textContent = 'Rp ' + totalAssets.toLocaleString('id-ID');
+      document.getElementById('reportTotalLiabilityEquity').textContent = 'Rp ' + totalLiabilitiesEquities.toLocaleString('id-ID');
+    }
+
+
+    // TUTUP PERIODE HARIAN (DAILY CLOSING)
+    function checkDailyClosureRequirements() {
+      const checks = document.querySelectorAll('.daily-check');
+      const btn = document.getElementById('btnDailyCloseSubmit');
+
+
+      let allChecked = true;
+      checks.forEach(c => { if (!c.checked) allChecked = false; });
+
+
+      if (allChecked) {
+        btn.disabled = false;
+        btn.className = "w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-4 rounded-xl text-xs transition shadow-lg shadow-rose-600/30 cursor-pointer";
+        btn.textContent = "KUNCI SECARA PERMANEN PERIODE HARIAN INI";
+        btn.onclick = executeDailyClosure;
+      } else {
+        btn.disabled = true;
+        btn.className = "w-full bg-slate-800 text-slate-500 font-bold py-4 rounded-xl text-xs transition cursor-not-allowed";
+        btn.textContent = "Selesaikan Seluruh Checklist Untuk Kunci Periode Hari Ini";
+        btn.onclick = null;
+      }
+    }
+
+
+    function executeDailyClosure() {
+      showToast("Tutup Periode Berhasil!", "Periode Harian telah dikunci. Seluruh mutasi telah diamankan.");
+      document.getElementById('dailyPeriodBadge').textContent = "PERIODE DITUTUP (LOCKED)";
+      document.getElementById('dailyPeriodBadge').className = "text-xs font-bold text-rose-400";
+    }
+
+
+    function updateKPIs() {
+      const pendingKasir = transactions.filter(t => t.sourceRole === 'kasir' && t.status === 'PENDING_AKUNTAN').length;
+      const pendingAdmin = transactions.filter(t => t.sourceRole === 'akuntan' && t.status === 'PENDING_ADMIN').length;
+      const totalPosted = transactions.filter(t => t.status === 'APPROVED').length;
+
+
+      document.getElementById('kpiKasirPending').textContent = pendingKasir;
+      document.getElementById('kpiAdminPending').textContent = pendingAdmin;
+      document.getElementById('kpiTotalPosted').textContent = totalPosted;
+    }
+  </script>
+<script>
+/* ERP INTEGRATION BRIDGE v2 */
+window.ERPBridge = window.ERPBridge || (function(){
+  const KEY='erpSession';
+  function session(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+  function save(res){if(res&&res.token){localStorage.setItem(KEY,JSON.stringify({token:res.token,user:res.userData||res.user||{}}));} return res;}
+  function clear(){localStorage.removeItem(KEY);}
+  function call(action,payload,onSuccess,onError){
+    payload=payload||{}; const s=session();
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia. Buka URL Web App resmi.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Backend error'});}).apiCall(action,payload,s?s.token:'');
+  }
+  function bootstrap(page,onSuccess,onError){
+    const s=session();
+    if(!s||!s.token){onError&&onError({code:'NO_SESSION',message:'Sesi login tidak ditemukan.'});return;}
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Bootstrap gagal'});}).getIntegratedBootstrap(s.token,page||'');
+  }
+  return {session,save,clear,call,bootstrap};
+})();
+</script><script>
+(function(){
+  function mapTx(t){return {id:t.id||t.TxID,noBukti:t.id||t.TxID,date:t.date,submittedBy:t.createdBy||t.cashier||'-',sourceRole:'kasir',status:String(t.status||'').toUpperCase(),description:t.description||t.desc,amount:Number(t.grandTotal||t.amount||0),entries:[],notes:t.notes||''};}
+  function boot(){ERPBridge.bootstrap('Akuntan',function(res){
+    const d=res.data||{}; if(Array.isArray(d.transactions)&&d.transactions.length){ transactions=d.transactions.map(mapTx); }
+    if(Array.isArray(d.coa)&&d.coa.length){ coaList=d.coa; }
+    const j=d.journals||[]; transactions.forEach(t=>{t.entries=j.filter(x=>String(x.RefID)===String(t.id)).map(x=>({coaCode:x.AccountCode,debit:Number(x.Debit||0),credit:Number(x.Credit||0),accountName:x.AccountName}));});
+    window.__ERP_AKUNTAN=res; renderAll();
+  },function(e){showToast('ERP','Gagal memuat data: '+e.message,'error');renderAll();});}
+  window.addEventListener('DOMContentLoaded',boot,{once:true});
+  const _approval=window.processKasirApproval;
+  window.processKasirApproval=function(txId,newStatus){
+    const note=document.getElementById('kasirAuditNote')?.value||'';
+    ERPBridge.call('handleKasirApproval',{id:txId,status:newStatus,notes:note},function(r){
+      const tx=transactions.find(t=>t.id===txId); if(tx){tx.status=r.status;tx.notes=note;}
+      showToast(newStatus==='APPROVED'?'Transaksi Disetujui':'Status Transaksi Diperbarui',r.status==='APPROVED'?'Transaksi diposting ke workflow ERP.':'Transaksi '+r.status,'success'); selectedKasirTxId=null; renderAll();
+    },function(e){showToast('Approval gagal',e.message,'error');});
+  };
+  window.openCoaModal=window.openCoaModal;
+  window.saveCoaToERP=function(payload,cb){ERPBridge.call('saveCoaRecord',payload,cb,function(e){showToast('COA gagal',e.message,'error');});};
+  window.deleteCoaFromERP=function(code,cb){ERPBridge.call('deleteCoaRecord',{code:code},cb,function(e){showToast('COA gagal',e.message,'error');});};
+  window.postJournalToERP=function(payload,cb){ERPBridge.call('saveJournalEntry',payload,cb,function(e){showToast('Jurnal gagal',e.message,'error');});};
+  window.saveCoaForm=function(e){e&&e.preventDefault();const mode=document.getElementById('coaModalMode').value,oldCode=document.getElementById('coaOldCode').value,code=document.getElementById('coaFormCode').value.trim(),name=document.getElementById('coaFormName').value.trim(),category=document.getElementById('coaFormCategory').value,normal=document.getElementById('coaFormNormal').value,initial=Number(document.getElementById('coaFormInitial').value||0); if(!code||!name)return showToast('COA','Kode dan nama akun wajib diisi.','error'); ERPBridge.call('saveCoaRecord',{code:code,name:name,category:category,normal:normal,balance:initial},function(r){ if(mode==='edit'){const idx=coaList.findIndex(x=>x.code===oldCode); if(idx>=0)coaList[idx]={code:code,name:name,category:category,normal:normal,initial:initial,isSystem:coaList[idx].isSystem};}else coaList.push({code,name,category,normal,initial,isSystem:false}); closeCoaModal(); renderAll(); showToast('Berhasil','COA tersimpan ke Google Sheet.','success');},function(e){showToast('COA gagal',e.message,'error');});};
+  window.deleteCoa=function(code){ERPBridge.call('deleteCoaRecord',{code:code},function(){coaList=coaList.filter(c=>c.code!==code);renderAll();showToast('Berhasil Dihapus','Akun dihapus dari ERP.','success');},function(e){showToast('Gagal Hapus',e.message,'error');});};
+})();
+</script>
+
+<script>
+/* ERP COMMUNICATION CENTER v1 */
+(function(){
+  const C={users:[],chats:[],broadcasts:[],targetId:'ALL',targetRole:'ALL',user:null,maintenance:null,lastBroadcastKey:''};
+  window.ERPComm=C;
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});}
+  function roleLabel(r){return ({SUPER_ADMIN:'Super Admin',ADMIN_PERUSAHAAN:'Admin Perusahaan',AKUNTAN:'Akuntan',KASIR:'Kasir',MANAJEMEN_PUNCAK:'Manajemen Puncak'}[String(r||'').toUpperCase()]||r||'-');}
+  function call(a,p,s){if(window.ERPBridge&&ERPBridge.call)return ERPBridge.call(a,p,s,function(e){},function(e){erpToast(e.message||'Gagal','error')});}
+  function getToken(){try{const x=JSON.parse(localStorage.getItem('erpSession')||'null');return x&&x.token?x.token:''}catch(e){return ''}}
+  function notify(kind,msg){if(typeof showToast==='function'){try{showToast(msg,kind||'info');return}catch(e){}} if(typeof Swal!=='undefined') Swal.fire(msg);}
+  window.erpToast=notify;
+  function renderUsers(){
+    const box=document.getElementById('erpChatUsers'),filter=(document.getElementById('erpChatRoleFilter')||{}).value||'ALL'; if(!box)return;
+    box.innerHTML=C.users.filter(u=>u.id!==((C.user||{}).id||'')&&(filter==='ALL'||String(u.role||'').toUpperCase()===filter)).map(u=>`<button type="button" onclick="erpChatSelect('${esc(u.id)}','${esc(u.role)}','${esc(u.name||u.email)}')" class="w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 hover:bg-slate-950 transition"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-indigo-500/15 text-indigo-300 flex items-center justify-center text-xs font-bold">${esc((u.name||'?').charAt(0).toUpperCase())}</div><div class="min-w-0"><div class="text-xs font-bold text-white truncate">${esc(u.name||u.email)}</div><div class="text-[10px] text-slate-500 truncate">${esc(roleLabel(u.role))}</div></div></div></button>`).join('')||'<div class="text-xs text-slate-500 p-3">Tidak ada pengguna untuk filter ini.</div>';
+  }
+  function renderMessages(){
+    const box=document.getElementById('erpChatMessages'); if(!box)return;
+    const me=(C.user&&C.user.id)||''; const selected=C.targetId||'ALL'; const role=C.targetRole||'ALL';
+    const arr=C.chats.filter(m=>{
+      const sender=String(m.SenderID||m.senderId||''); const receiver=String(m.ReceiverID||m.receiverId||''); const rt=String(m.RoleTarget||m.roleTarget||'').toUpperCase();
+      if(selected==='ALL'&&role==='ALL') return rt==='ALL'||receiver==='ALL'||receiver==='';
+      if(role!=='ALL') return (rt===role||rt==='ROLE:'+role)&& (sender===me||receiver===me||sender!=='' );
+      return (sender===me&&receiver===selected)||(receiver===me&&sender===selected);
+    });
+    box.innerHTML=arr.map(m=>{const mine=String(m.SenderID||m.senderId||'')===String(me);return `<div class="flex ${mine?'justify-end':'justify-start'}"><div class="max-w-[82%] px-3 py-2.5 rounded-2xl ${mine?'bg-indigo-600 text-white':'bg-slate-800 text-slate-200'}"><div class="text-[9px] opacity-70 mb-1">${esc(m.Pengirim||m.SenderName||'User')} · ${esc(m.Waktu||m.Time||'')}</div><div class="text-xs leading-relaxed whitespace-pre-wrap">${esc(m.Pesan||m.Text||'')}</div></div></div>`}).join('')||'<div class="h-full min-h-[240px] flex items-center justify-center text-xs text-slate-500">Belum ada pesan pada percakapan ini.</div>';
+    box.scrollTop=box.scrollHeight;
+  }
+  function renderBroadcasts(){
+    const box=document.getElementById('erpBroadcastItems'), latest=C.broadcasts||[]; if(box)box.innerHTML=latest.map(b=>`<div class="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5"><div class="flex items-center justify-between gap-2"><b class="text-xs text-amber-300">${esc(b.Title||'Broadcast')}</b><span class="text-[9px] text-slate-500">${esc(b.Date||b.CreatedAt||'')}</span></div><p class="text-xs text-slate-300 mt-1 whitespace-pre-wrap">${esc(b.Message||'')}</p><div class="text-[9px] text-slate-500 mt-1">Target: ${esc(b.Target||'ALL')}</div></div>`).join('')||'<div class="text-xs text-slate-500">Belum ada broadcast.</div>';
+    const top=latest[0]; const n=document.getElementById('erpGlobalNotice'); if(top&&n){document.getElementById('erpGlobalNoticeTitle').textContent=top.Title||'Pengumuman Sistem';document.getElementById('erpGlobalNoticeText').textContent=top.Message||'';n.classList.remove('hidden');}
+  }
+  function apply(res){
+    if(!res)return; C.user=res.user||C.user; C.users=res.users||[]; C.chats=res.chats||[]; C.broadcasts=res.broadcasts||[]; C.maintenance=res.maintenance||null;
+    renderUsers();renderMessages();renderBroadcasts();applyMaintenance(C.maintenance);
+  }
+  function applyMaintenance(m){
+    const overlay=document.getElementById('erpMaintenanceOverlay'), txt=document.getElementById('erpMaintenanceText'); if(!overlay)return;
+    const role=String((C.user||{}).role||'').toUpperCase(); const on=!!(m&&m.isUnderMaintenance); if(txt)txt.textContent=(m&&m.noticeText)||'Operasional sementara dikunci oleh Super Admin.';
+    if(on&&role!=='SUPER_ADMIN')overlay.classList.remove('hidden'); else overlay.classList.add('hidden');
+    if(typeof checkMaintenanceStatus==='function' && role==='SUPER_ADMIN') try{checkMaintenanceStatus()}catch(e){}
+  }
+  window.applyMaintenance=applyMaintenance;
+  window.closeErpNotice=function(){const n=document.getElementById('erpGlobalNotice');if(n)n.classList.add('hidden');};
+  window.erpChatSelect=function(id,role,name){C.targetId=id;C.targetRole=role==='ALL'?'ALL':'';const t=document.getElementById('erpChatTargetTitle'),s=document.getElementById('erpChatTargetSub');if(t)t.textContent=name||'Penerima';if(s)s.textContent=role==='ALL'?'Semua pengguna':roleLabel(role);renderUsers();renderMessages();};
+  window.erpChatRenderUsers=renderUsers;
+  window.erpChatSend=function(e){
+    e.preventDefault(); const input=document.getElementById('erpChatInput'); const text=(input&&input.value||'').trim(); if(!text)return;
+    const payload={text:text,receiverId:C.targetId||'ALL',roleTarget:C.targetRole||'ALL'};
+    if(input)input.disabled=true;
+    ERPBridge.call('sendInternalChat',payload,function(r){if(input){input.value='';input.disabled=false;} if(r&&r.chat)C.chats.push(r.chat);renderMessages();},function(err){if(input)input.disabled=false;notify('error',err.message||'Gagal mengirim pesan');});
+  };
+  window.erpChatRefresh=function(){
+    const s=ERPBridge.session&&ERPBridge.session(); if(!s||!s.token)return;
+    ERPBridge.call('getCommunicationData',{},function(r){apply(r)},function(e){notify('error',e.message||'Gagal memuat komunikasi');});
+  };
+  window.erpRefreshCommunication=window.erpChatRefresh;
+  window.erpCommBoot=function(){erpChatRefresh();setInterval(erpChatRefresh,15000);};
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(erpCommBoot,350);});
+})();
+</script>
+
+</body>
+</html>
+```

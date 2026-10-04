@@ -1,0 +1,1737 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workstation Kasir POS & Messaging System (Barcodes, Multi-Role & GAS API)</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- HTML5 QR Code & Barcode Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    .animate-fade-in { animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(6px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    .toast-enter { animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+
+    #interactive video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+      border-radius: 0.75rem;
+    }
+
+
+    @media print {
+      body * { visibility: hidden; }
+      #printable-receipt, #printable-receipt * { visibility: visible; }
+      #printable-receipt { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 100%; 
+        max-width: 300px;
+        color: black !important; 
+        background: white !important; 
+        margin: 0;
+        padding: 10px;
+        font-family: monospace;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-900 text-slate-200 min-h-screen selection:bg-emerald-500/30 flex flex-col relative">
+<!-- ERP GLOBAL COMMUNICATION / MAINTENANCE -->
+<div id="erpGlobalNotice" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-[95] w-[min(92vw,900px)] px-4 py-3 rounded-2xl border border-indigo-400/30 bg-slate-900/95 backdrop-blur shadow-2xl">
+  <div class="flex items-start gap-3"><div class="text-xl">📢</div><div class="min-w-0 flex-1"><div id="erpGlobalNoticeTitle" class="font-bold text-sm text-white">Pengumuman Sistem</div><div id="erpGlobalNoticeText" class="text-xs text-slate-300 mt-1 whitespace-pre-line"></div></div><button type="button" onclick="closeErpNotice()" class="text-slate-400 hover:text-white">✕</button></div>
+</div>
+<div id="erpMaintenanceOverlay" class="hidden fixed inset-0 z-[90] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-6">
+  <div class="max-w-xl w-full bg-slate-900 border border-rose-500/30 rounded-3xl shadow-2xl p-8 text-center">
+    <div class="w-16 h-16 rounded-2xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-3xl mx-auto mb-5">🛠️</div>
+    <h2 class="text-2xl font-black text-white">Sistem Sedang Maintenance</h2>
+    <p id="erpMaintenanceText" class="text-sm text-slate-300 mt-3 leading-relaxed">Operasional sementara dikunci oleh Super Admin.</p>
+    <div class="mt-6 text-xs text-slate-500">Halaman akan memeriksa status sistem secara otomatis.</div>
+  </div>
+</div>
+
+
+
+  <!-- GLOBAL SYSTEM MAINTENANCE BANNER -->
+  <div id="maintenanceBanner" class="hidden bg-gradient-to-r from-amber-600 via-rose-600 to-amber-600 text-white px-4 py-2 text-xs font-bold shadow-lg flex items-center justify-between z-[130] animate-pulse">
+    <div class="flex items-center gap-2 max-w-5xl mx-auto">
+      <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      <span id="maintenanceText">Sistem sedang dalam mode Pemeliharaan (Maintenance) oleh Super Admin. Harap simpan pekerjaan Anda!</span>
+    </div>
+    <button onclick="hideMaintenanceBanner()" class="text-white/80 hover:text-white text-xs underline font-normal">Tutup Banner</button>
+  </div>
+
+
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[140] flex flex-col gap-3 pointer-events-none"></div>
+
+
+  <!-- Custom Confirmation Modal -->
+  <div id="custom-modal" class="fixed inset-0 z-[120] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" id="modal-backdrop"></div>
+    <div class="relative bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl w-full max-w-md transform transition-all scale-95 opacity-0 duration-200" id="modal-panel">
+      <div class="flex items-center gap-3 mb-4">
+        <div id="modal-icon" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-rose-500/20 text-rose-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <div>
+          <h3 id="modal-title" class="text-lg font-bold text-slate-100">Konfirmasi</h3>
+          <p id="modal-subtitle" class="text-xs text-slate-400"></p>
+        </div>
+      </div>
+      <p id="modal-message" class="text-sm text-slate-300 mb-6 leading-relaxed"></p>
+      <div class="flex justify-end gap-3">
+        <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-300 bg-slate-700 hover:bg-slate-600 transition">Batal</button>
+        <button id="modal-confirm-btn" class="px-4 py-2 rounded-xl text-sm font-bold text-white transition bg-rose-500 hover:bg-rose-600">Konfirmasi</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- BARCODE CAMERA SCANNER MODAL -->
+  <div id="scanner-modal" class="fixed inset-0 z-[110] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/85 backdrop-blur-md" onclick="closeScannerModal()"></div>
+    <div class="relative bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-5 flex flex-col gap-4 z-10">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+          Scan Barcode / QR Produk
+        </h3>
+        <button onclick="closeScannerModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+
+      <div class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[260px] border border-slate-700 flex flex-col items-center justify-center">
+        <div id="reader" class="w-full"></div>
+        <p id="scannerStatusText" class="text-xs font-mono text-emerald-400 p-2 text-center bg-slate-900 w-full rounded-b-xl z-20 relative">Menyiapkan Kamera...</p>
+      </div>
+
+
+      <div class="flex items-center justify-between gap-2 text-xs">
+        <span class="text-slate-400 font-mono text-[11px]">Arahkan barcode ke kotak pemindai</span>
+        <button onclick="playBeepSound()" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 font-bold text-[10px] flex items-center gap-1">
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+          Tes Suara Beep
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MEMBER FORM MODAL -->
+  <div id="member-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeMemberModal()"></div>
+    <div class="relative bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 z-10">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          Tambah Member Baru
+        </h3>
+        <button onclick="closeMemberModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+
+      <form id="formMember" onsubmit="saveMember(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">ID Member (Otomatis)</label>
+          <input type="text" id="memberId" readonly class="w-full bg-slate-900/50 border border-slate-700 p-2.5 rounded-xl text-xs font-mono text-slate-400 cursor-not-allowed">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nama Lengkap</label>
+          <input type="text" id="memberName" required placeholder="Contoh: Budi Santoso" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-100 focus:border-emerald-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Tingkat Membership / Diskon</label>
+          <select id="memberTier" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200 focus:border-emerald-500 focus:outline-none">
+            <option value="5">Reguler - Diskon 5%</option>
+            <option value="10">VIP - Diskon 10%</option>
+            <option value="15">Super VIP - Diskon 15%</option>
+          </select>
+        </div>
+        
+        <div class="pt-3 flex justify-end gap-2 border-t border-slate-700">
+          <button type="button" onclick="closeMemberModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 bg-slate-700 hover:bg-slate-600 transition">Batal</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition shadow-lg">
+            Simpan Member
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- GOOGLE APPS SCRIPT API CONFIG MODAL -->
+  <div id="gas-modal" class="fixed inset-0 z-[110] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/85 backdrop-blur-md" onclick="closeGasModal()"></div>
+    <div class="relative bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto custom-scrollbar z-10">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+          Status Koneksi Google Apps Script (Native API)
+        </h3>
+        <button onclick="closeGasModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+
+      <div class="space-y-4">
+        <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700 text-xs space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-slate-300">Mode Koneksi:</span>
+            <span class="font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[11px] font-bold">google.script.run (Langsung)</span>
+          </div>
+          <p class="text-slate-400">URL Konfigurasi dan Fetch API telah dinonaktifkan. Sistem ini dirancang untuk dijalankan langsung di dalam Web App Google Apps Script.</p>
+        </div>
+        <div class="pt-3 border-t border-slate-700 flex justify-end gap-2">
+          <button onclick="closeGasModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-5 py-2 rounded-xl text-xs transition">Tutup</button>
+          <button onclick="testGasConnection()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2 rounded-xl text-xs transition">Tes Sync Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Product Modal -->
+  <div id="product-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeProductModal()"></div>
+    <div class="relative bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4 z-10">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 id="productModalTitle" class="font-bold text-slate-100 text-base flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+          Tambah Produk Baru
+        </h3>
+        <button onclick="closeProductModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+
+      <form id="formProduct" onsubmit="saveProduct(event)" class="space-y-4">
+        <input type="hidden" id="prodEditId" value="">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">SKU / Barcode Kode</label>
+            <div class="flex gap-1.5">
+              <input type="text" id="prodSku" required placeholder="8991004" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs font-mono text-slate-200 focus:border-emerald-500 focus:outline-none">
+              <button type="button" onclick="generateRandomSku()" class="px-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-bold text-slate-300">Acak</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Kategori</label>
+            <select id="prodCat" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200 focus:border-emerald-500 focus:outline-none">
+              <option value="MAKANAN">Makanan</option>
+              <option value="MINUMAN">Minuman</option>
+              <option value="SNACK">Snack</option>
+              <option value="JASA">Jasa / Layanan</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nama Produk</label>
+          <input type="text" id="prodName" required placeholder="Contoh: Es Kopi Sanger Top" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-100 focus:border-emerald-500 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Harga Beli (Rp)</label>
+            <input type="number" id="prodCost" required min="0" step="500" placeholder="10000" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs font-mono text-slate-200 focus:border-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Harga Jual (Rp)</label>
+            <input type="number" id="prodPrice" required min="500" step="500" placeholder="15000" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs font-mono text-emerald-400 focus:border-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Stok Awal</label>
+            <input type="number" id="prodStock" required min="0" placeholder="50" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs font-mono text-slate-200 focus:border-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Ikon Emoji</label>
+            <input type="text" id="prodIcon" placeholder="🍹" value="📦" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs text-center text-lg focus:border-emerald-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="pt-3 flex justify-end gap-2 border-t border-slate-700">
+          <button type="button" onclick="closeProductModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 bg-slate-700 hover:bg-slate-600 transition">Batal</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition flex items-center gap-1.5 shadow-lg">
+            Simpan Produk
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Held Orders Modal -->
+  <div id="held-orders-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeHeldOrdersModal()"></div>
+    <div class="relative bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg p-5 flex flex-col max-h-[85vh] z-10">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-3">
+        <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Daftar Order Ditunda (Pending Carts)
+        </h3>
+        <button onclick="closeHeldOrdersModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div id="heldOrdersList" class="overflow-y-auto custom-scrollbar flex-1 space-y-3 p-1"></div>
+    </div>
+  </div>
+
+
+  <!-- Thermal Receipt Modal -->
+  <div id="receipt-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeReceiptModal()"></div>
+    <div class="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-5 overflow-hidden flex flex-col max-h-[90vh] z-10">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3 shrink-0">
+        <h3 class="font-bold text-slate-100 flex items-center gap-2 text-sm">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          Struk Transaksi POS
+        </h3>
+        <button onclick="closeReceiptModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+
+      <div class="overflow-y-auto custom-scrollbar p-1">
+        <div id="printable-receipt" class="bg-white text-slate-900 p-5 rounded-xl font-mono text-xs leading-relaxed shadow-inner border border-slate-200 mx-auto w-full max-w-[300px]">
+          <!-- Receipt printed here dynamically -->
+        </div>
+      </div>
+
+
+      <div class="flex gap-2 mt-4 pt-3 border-t border-slate-800 shrink-0">
+        <button onclick="printReceipt()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+          Cetak Thermal
+        </button>
+        <button onclick="copyReceiptText()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-1.5">
+          Salin Text
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- MAIN WORKSPACE CONTAINER -->
+  <main class="max-w-[1600px] mx-auto p-3 sm:p-5 lg:p-6 flex-1 w-full flex flex-col">
+    
+    <!-- Top Header & Multi-Company Switcher Bar -->
+    <div id="viewKasir" class="space-y-5 flex-1 flex flex-col">
+      
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-700/80 pb-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-3">
+            <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 flex items-center gap-2">
+              <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+              Workstation Kasir POS
+            </h2>
+            
+            <div class="relative flex items-center">
+              <span class="text-[10px] text-slate-400 font-bold uppercase mr-2 hidden sm:inline">Perusahaan:</span>
+              <select id="companySelector" onchange="switchCompany(this.value)" class="bg-slate-800 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-400 cursor-pointer shadow-sm">
+                <!-- Dynamically populated companies -->
+              </select>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Sistem POS Multi-Perusahaan Terintegrasi Google Sheet (Native API Mode)</p>
+        </div>
+
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="bg-slate-800 border border-sky-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2">
+            <span class="text-[10px] text-sky-400 uppercase font-bold">Role Aktif:</span>
+            <select id="roleSelector" onchange="switchActiveUser(this.value)" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold rounded-lg px-2.5 py-1 focus:outline-none focus:border-sky-400 cursor-pointer">
+            </select>
+          </div>
+
+
+          <button onclick="openGasModal()" class="bg-slate-800 border border-slate-700 hover:border-emerald-500/50 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs font-bold transition group relative overflow-hidden" title="Klik untuk membuka konfigurasi GAS">
+            <div class="absolute inset-0 bg-emerald-500/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+            <span id="gasStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse relative z-10"></span>
+            <span id="gasStatusText" class="text-emerald-300 relative z-10 truncate max-w-[150px]">GAS Native Ready</span>
+          </button>
+
+
+          <div class="bg-slate-800/90 border border-slate-700/80 px-3.5 py-1.5 rounded-xl flex items-center gap-3 shadow-inner">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"></div>
+            <div>
+              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Kasir Aktif</p>
+              <p class="text-xs font-mono font-bold text-slate-200" id="cashierBadgeName">Budi (Kasir)</p>
+            </div>
+            <div class="h-6 w-px bg-slate-700 mx-1"></div>
+            <div>
+              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Kas di Laci</p>
+              <p id="drawerBalanceBadge" class="text-xs font-mono font-bold text-emerald-400">Rp 0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Navigation Tabs -->
+      <div class="flex border-b border-slate-700/80 space-x-2 overflow-x-auto text-xs font-bold hide-scrollbar pb-px">
+        <button onclick="switchKasirTab('tabPOS')" id="btnTabPOS" class="kasir-tab-btn flex items-center gap-2 py-3 px-5 text-emerald-400 border-b-2 border-emerald-400 bg-emerald-500/5 rounded-t-lg transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+          Mesin Kasir (POS)
+        </button>
+        <button onclick="switchKasirTab('tabAccounts')" id="btnTabAccounts" class="kasir-tab-btn flex items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V10m0 0H7m3 0h4"></path></svg>
+          Akun Kas & Opname
+        </button>
+        <button onclick="switchKasirTab('tabProduct')" id="btnTabProduct" class="kasir-tab-btn flex items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+          Katalog Produk <span id="badgeProductCount" class="bg-sky-500/20 text-sky-400 border border-sky-500/30 px-1.5 py-0.5 rounded-full text-[9px] font-black">0</span>
+        </button>
+        
+        <button onclick="switchKasirTab('tabMembers')" id="btnTabMembers" class="kasir-tab-btn flex items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          Member
+        </button>
+
+
+        <button onclick="switchKasirTab('tabHistory')" id="btnTabHistory" class="kasir-tab-btn flex items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Riwayat <span id="badgeHistoryCount" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full text-[9px] font-black">0</span>
+        </button>
+
+
+        <button onclick="switchKasirTab('tabMessaging')" id="btnTabMessaging" class="kasir-tab-btn flex items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap relative">
+          <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+          Pesan Multi-Role
+          <span id="badgeUnreadMsg" class="bg-purple-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">0</span>
+        </button>
+
+
+        <button onclick="switchKasirTab('tabErpChat')" id="btnTabErpChat" class="kasir-tab-btn items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap">💬 Chat Internal</button>
+<button onclick="switchKasirTab('tabMaintenance')" id="btnTabMaintenance" class="hidden kasir-tab-btn items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+          Status & Maintenance
+        </button>
+
+
+        <button onclick="switchKasirTab('tabExpense')" id="btnTabExpense" class="kasir-tab-btn flex items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 00-2 2h2m2 4h10a2 2 0 00-2-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          Kas Kecil (Petty Cash)
+        </button>
+        <button onclick="switchKasirTab('tabShift')" id="btnTabShift" class="kasir-tab-btn flex items-center gap-2 py-3 px-5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-slate-800/50 rounded-t-lg transition whitespace-nowrap">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          Closing Shift
+        </button>
+      </div>
+
+
+      <!-- TAB 1: POS MESIN KASIR -->
+      <div id="tabPOS" class="kasir-tab-content flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 animate-fade-in">
+        
+        <!-- Product Grid Column -->
+        <div class="lg:col-span-7 flex flex-col gap-4">
+          <div class="bg-slate-800/90 border border-slate-700/80 p-3.5 rounded-2xl flex flex-col sm:flex-row gap-3 items-center justify-between shadow-sm">
+            <div class="relative flex-1 w-full">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <input type="text" id="inputSearchProduct" onkeyup="filterProducts()" onkeydown="handleBarcodeKeyDown(event)" placeholder="Cari nama barang atau scan SKU / Barcode..." class="w-full bg-slate-900 border border-slate-700 pl-10 pr-24 py-2 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono transition shadow-inner" autofocus>
+              
+              <!-- SCAN BARCODE CAMERA BUTTON -->
+              <button onclick="openScannerModal()" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition flex items-center gap-1 shadow">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                Scan
+              </button>
+            </div>
+            
+            <div class="flex gap-1.5 items-center w-full sm:w-auto overflow-x-auto hide-scrollbar text-[11px] font-bold">
+              <button onclick="setCategory('ALL')" class="cat-pill px-3 py-2 rounded-xl bg-emerald-500 text-slate-950 transition shrink-0 shadow-sm" data-cat="ALL">Semua</button>
+              <button onclick="setCategory('MAKANAN')" class="cat-pill px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-700 text-slate-300 transition shrink-0" data-cat="MAKANAN">Makanan</button>
+              <button onclick="setCategory('MINUMAN')" class="cat-pill px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-700 text-slate-300 transition shrink-0" data-cat="MINUMAN">Minuman</button>
+              <button onclick="setCategory('SNACK')" class="cat-pill px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-700 text-slate-300 transition shrink-0" data-cat="SNACK">Snack</button>
+            </div>
+          </div>
+
+
+          <div class="bg-slate-800/50 border border-slate-700/60 p-3.5 rounded-2xl flex-1 overflow-y-auto custom-scrollbar max-h-[calc(100vh-280px)] shadow-inner">
+            <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+              <!-- Products rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Cart Column -->
+        <div class="lg:col-span-5 flex flex-col bg-slate-800/90 border border-slate-700/80 rounded-2xl overflow-hidden shadow-xl relative">
+          <div class="bg-slate-900/80 border-b border-slate-700/80 p-3.5 space-y-2.5 z-10">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                  Keranjang Belanja
+                </h3>
+              </div>
+
+
+              <div class="flex items-center gap-1.5">
+                <button onclick="holdCurrentCart()" title="Tunda Transaksi Ini" class="text-[10px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-1 rounded-lg transition font-bold flex items-center gap-1">
+                  Tunda
+                </button>
+                <button onclick="openHeldOrdersModal()" title="Lihat Order Pending" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-1 rounded-lg transition font-bold flex items-center gap-1 shadow-sm">
+                  <span>Pending</span>
+                  <span id="badgeHeldCount" class="bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded-full font-black text-[9px]">0</span>
+                </button>
+                <button onclick="showClearCartConfirm()" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/10 px-2 py-1 rounded-lg transition border border-rose-500/20">
+                  Kosongkan
+                </button>
+              </div>
+            </div>
+
+
+            <!-- NEW: Manual Customer Name & Queue Number Inputs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+              <div>
+                <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Nama Pelanggan:</label>
+                <input type="text" id="inputCustomerName" placeholder="Contoh: Bpk. Andi / Umum" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-[11px] rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500 shadow-inner">
+              </div>
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="block text-[10px] text-slate-400 uppercase font-bold">No. Antrian:</label>
+                  <button type="button" onclick="autoIncrementQueue()" class="text-[9px] text-emerald-400 hover:underline">Auto</button>
+                </div>
+                <input type="text" id="inputQueueNo" value="A-01" placeholder="A-01" class="w-full bg-slate-900 border border-slate-700 text-emerald-300 font-mono text-[11px] font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500 shadow-inner text-center">
+              </div>
+            </div>
+
+
+            <div class="flex items-center gap-2 pt-1 border-t border-slate-800/80">
+              <span class="text-[10px] text-slate-400 font-bold uppercase shrink-0">Member Diskon:</span>
+              <select id="selectMember" onchange="calculateCartTotals()" class="bg-slate-900 border border-slate-700 text-slate-200 text-[11px] rounded-lg px-2 py-1 focus:outline-none focus:border-emerald-500 flex-1 shadow-inner">
+                <option value="NONE" data-disc="0">Pilih Member (Opsional)</option>
+              </select>
+            </div>
+          </div>
+
+
+          <div class="flex-1 p-3.5 overflow-y-auto custom-scrollbar max-h-[250px] min-h-[140px] divide-y divide-slate-700/50" id="cartContainer">
+            <!-- Cart items dynamically rendered -->
+          </div>
+
+
+          <div class="bg-slate-900/90 border-t border-slate-700/80 p-4 space-y-3 z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
+            <div class="space-y-1.5 text-xs font-mono">
+              <div class="flex justify-between text-slate-400">
+                <span>Subtotal Items</span>
+                <span id="txtSubtotal" class="text-slate-200">Rp 0</span>
+              </div>
+              <div class="flex justify-between text-slate-400 items-center">
+                <span class="flex items-center gap-1.5">
+                  PPN 11%
+                  <input type="checkbox" id="chkTax" onchange="calculateCartTotals()" checked class="rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-0 cursor-pointer">
+                </span>
+                <span id="txtTax" class="text-slate-300">Rp 0</span>
+              </div>
+
+
+              <div class="space-y-1 pt-1 border-t border-slate-800/60">
+                <div class="flex justify-between text-slate-400 items-center">
+                  <span>Diskon Tambahan</span>
+                  <div class="flex items-center gap-1 w-28">
+                    <input type="number" id="inputDiscount" value="0" min="0" oninput="calculateCartTotals()" class="w-full bg-slate-800 border border-slate-700 text-right text-xs px-2 py-0.5 rounded text-emerald-400 focus:outline-none focus:border-emerald-500">
+                    <span class="text-[10px] text-slate-500">%</span>
+                  </div>
+                </div>
+              </div>
+
+
+              <div class="flex justify-between text-sm font-bold pt-2 border-t border-slate-700/80 text-white">
+                <span class="uppercase tracking-wider text-xs text-emerald-400">Total Bayar</span>
+                <span id="txtGrandTotal" class="text-emerald-400 text-base font-black">Rp 0</span>
+              </div>
+            </div>
+
+
+            <!-- Payment Options -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="setPaymentMethod('CASH')" id="btnPayCash" class="pay-method-btn bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition">
+                  💵 Tunai
+                </button>
+                <button onclick="setPaymentMethod('QRIS')" id="btnPayQris" class="pay-method-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition">
+                  📱 QRIS
+                </button>
+                <button onclick="setPaymentMethod('TRANSFER')" id="btnPayTransfer" class="pay-method-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition">
+                  🏦 Bank
+                </button>
+              </div>
+
+
+              <div id="cashPayBox" class="space-y-2">
+                <div class="flex gap-2 items-center">
+                  <input type="number" id="inputCashPaid" placeholder="Jumlah Tunai Diterima" onkeyup="calculateChange()" class="w-full bg-slate-800 border border-slate-700 p-2.5 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500 font-bold">
+                </div>
+                <!-- Quick Fast Cash Edit Buttons -->
+                <div class="grid grid-cols-5 gap-1.5">
+                  <button onclick="addCashPaid(10000)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[10px] font-bold py-1.5 rounded-lg transition whitespace-nowrap">+10k</button>
+                  <button onclick="addCashPaid(20000)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[10px] font-bold py-1.5 rounded-lg transition whitespace-nowrap">+20k</button>
+                  <button onclick="addCashPaid(50000)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[10px] font-bold py-1.5 rounded-lg transition whitespace-nowrap">+50k</button>
+                  <button onclick="addCashPaid(100000)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[10px] font-bold py-1.5 rounded-lg transition whitespace-nowrap">+100k</button>
+                  <button onclick="setCashPaidExact()" class="bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold py-1.5 rounded-lg transition whitespace-nowrap hover:bg-emerald-500/30">Uang Pas</button>
+                </div>
+              </div>
+
+
+              <div class="flex justify-between text-xs font-mono bg-slate-950/60 p-2 rounded-xl border border-slate-800 items-center">
+                <span class="text-slate-400">Kembalian:</span>
+                <span id="txtChangeAmount" class="font-bold text-amber-400 text-base">Rp 0</span>
+              </div>
+
+
+              <button onclick="processCheckout()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Selesaikan Transaksi & Cetak
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- TAB: MEMBERS -->
+      <div id="tabMembers" class="kasir-tab-content hidden space-y-4 animate-fade-in">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            Kelola Pelanggan (Member)
+          </h3>
+          <button onclick="openMemberModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow">
+            Tambah Member
+          </button>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-900/90 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-700">
+                <tr>
+                  <th class="p-3">ID Member</th>
+                  <th class="p-3">Nama Lengkap</th>
+                  <th class="p-3">Tingkat Diskon</th>
+                </tr>
+              </thead>
+              <tbody id="tblMemberBody" class="divide-y divide-slate-700/60 font-mono">
+                <!-- Members rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- TAB 2: AKUN KAS & OPNAME -->
+      <div id="tabAccounts" class="kasir-tab-content hidden space-y-5 animate-fade-in">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl">
+            <p class="text-xs text-slate-400 font-bold uppercase">Kas Laci Kasir (KAS_LACI)</p>
+            <h3 id="accDrawerVal" class="text-xl font-mono font-black text-emerald-400 mt-1">Rp 0</h3>
+            <p class="text-[11px] text-slate-500 mt-2">Digunakan untuk kembalian transaksi fisik tunai</p>
+          </div>
+          <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl">
+            <p class="text-xs text-slate-400 font-bold uppercase">Kas Utama Perusahaan (BANK_BCA)</p>
+            <h3 id="accBankVal" class="text-xl font-mono font-black text-sky-400 mt-1">Rp 0</h3>
+            <p class="text-[11px] text-slate-500 mt-2">Penerimaan QRIS & Transfer Bank</p>
+          </div>
+          <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl">
+            <p class="text-xs text-slate-400 font-bold uppercase">Kas Kecil / Petty Cash</p>
+            <h3 id="accPettyVal" class="text-xl font-mono font-black text-amber-400 mt-1">Rp 0</h3>
+            <p class="text-[11px] text-slate-500 mt-2">Operasional harian & pengeluaran kecil</p>
+          </div>
+        </div>
+
+
+        <div class="bg-slate-800/80 border border-slate-700/80 p-5 rounded-2xl space-y-4">
+          <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2 border-b border-slate-700 pb-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            Kalkulator Opname Kas Fisik (Cash Count Check)
+          </h3>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+            <div><label class="text-slate-400 block mb-1">100.000 x</label><input type="number" min="0" value="0" oninput="calcOpname()" id="den100k" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-emerald-400"></div>
+            <div><label class="text-slate-400 block mb-1">50.000 x</label><input type="number" min="0" value="0" oninput="calcOpname()" id="den50k" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-emerald-400"></div>
+            <div><label class="text-slate-400 block mb-1">20.000 x</label><input type="number" min="0" value="0" oninput="calcOpname()" id="den20k" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-emerald-400"></div>
+            <div><label class="text-slate-400 block mb-1">10.000 x</label><input type="number" min="0" value="0" oninput="calcOpname()" id="den10k" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-emerald-400"></div>
+            <div><label class="text-slate-400 block mb-1">5.000 x</label><input type="number" min="0" value="0" oninput="calcOpname()" id="den5k" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-emerald-400"></div>
+            <div><label class="text-slate-400 block mb-1">2.000 x</label><input type="number" min="0" value="0" oninput="calcOpname()" id="den2k" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-emerald-400"></div>
+            <div><label class="text-slate-400 block mb-1">1.000 x</label><input type="number" min="0" value="0" oninput="calcOpname()" id="den1k" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-emerald-400"></div>
+            <div><label class="text-slate-400 block mb-1">Koin / Lainnya</label><input type="number" min="0" value="0" oninput="calcOpname()" id="denCoins" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-emerald-400"></div>
+          </div>
+          <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs font-mono">
+            <span>Total Hasil Opname Fisik:</span>
+            <span id="txtOpnameTotal" class="text-base font-bold text-emerald-400">Rp 0</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- TAB 3: KATALOG PRODUK -->
+      <div id="tabProduct" class="kasir-tab-content hidden space-y-4 animate-fade-in">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-slate-100 text-sm">Kelola Produk & Stok</h3>
+          <button onclick="openProductModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Tambah Produk
+          </button>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-900/90 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-700">
+                <tr>
+                  <th class="p-3">Produk</th>
+                  <th class="p-3">SKU / Barcode</th>
+                  <th class="p-3">Kategori</th>
+                  <th class="p-3 text-right">Harga Beli</th>
+                  <th class="p-3 text-right">Harga Jual</th>
+                  <th class="p-3 text-center">Stok</th>
+                </tr>
+              </thead>
+              <tbody id="tblProductBody" class="divide-y divide-slate-700/60 font-mono">
+                <!-- Products rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- TAB 4: RIWAYAT PENJUALAN -->
+      <div id="tabHistory" class="kasir-tab-content hidden space-y-4 animate-fade-in">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-slate-100 text-sm">Riwayat Transaksi POS</h3>
+          <div class="flex gap-2">
+            <button onclick="exportHistoryCSV()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              Export CSV
+            </button>
+            <button onclick="syncHistoryWithGAS()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+              Sync Ke GAS (API)
+            </button>
+          </div>
+        </div>
+
+
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-900/90 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-700">
+                <tr>
+                  <th class="p-3">Waktu</th>
+                  <th class="p-3">No Order</th>
+                  <th class="p-3">Antrian</th>
+                  <th class="p-3">Pelanggan</th>
+                  <th class="p-3">Kasir</th>
+                  <th class="p-3 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody id="tblHistoryBody" class="divide-y divide-slate-700/60 font-mono">
+                <!-- History rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- TAB 5: PESAN MULTI-ROLE -->
+      <div id="tabMessaging" class="kasir-tab-content hidden space-y-4 animate-fade-in">
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-700 pb-3 gap-3">
+            <div>
+              <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                Pusat Komunikasi & Pesan Antar Role
+              </h3>
+            </div>
+            <button onclick="fetchUsersAndMessagesFromGAS()" class="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center gap-1.5 self-start md:self-auto">
+              Refresh Pesan
+            </button>
+          </div>
+
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div class="lg:col-span-4 bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 flex flex-col space-y-3">
+              <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Daftar Pengguna / Role</h4>
+              <div id="chatRoleQuickList" class="grid grid-cols-2 gap-2"></div><div id="usersListContainer" class="space-y-2 overflow-y-auto max-h-[350px] custom-scrollbar"></div>
+            </div>
+            <div class="lg:col-span-8 bg-slate-900/80 border border-slate-700/80 rounded-xl p-4 flex flex-col h-[400px]">
+              <div class="border-b border-slate-800 pb-3 mb-3 flex items-center justify-between">
+                <div>
+                  <h4 id="chatTargetTitle" class="text-xs font-bold text-purple-300 uppercase">Pilih Penerima</h4>
+                </div>
+                <span id="targetBadgeRole" class="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">SEMUA ROLE</span>
+              </div>
+              <div id="chatMessagesContainer" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2"></div>
+              <form onsubmit="sendChatMessage(event)" class="mt-3 flex gap-2 pt-3 border-t border-slate-800">
+                <input type="text" id="inputChatMessage" placeholder="Ketik pesan..." required class="flex-1 bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition">Kirim</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- TAB 6: MAINTENANCE (SUPER ADMIN) -->
+      <div id="tabMaintenance" class="kasir-tab-content hidden space-y-5 animate-fade-in">
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div>
+              <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                Kontrol Maintenance Sistem
+              </h3>
+            </div>
+            <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-3 py-1 rounded-xl">Hak Akses Super Admin</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="bg-slate-900/90 border border-slate-700 p-4 rounded-xl space-y-3">
+              <h4 class="text-xs font-bold uppercase text-slate-300">Mode Maintenance Aplikasi</h4>
+              <div class="space-y-2 pt-2">
+                <textarea id="inputMaintenanceNotice" rows="2" class="w-full bg-slate-800 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200">Sistem sedang dalam mode Pemeliharaan (Maintenance) oleh Super Admin.</textarea>
+              </div>
+              <div class="flex gap-2 pt-2">
+                <button onclick="toggleMaintenanceMode(true)" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl text-xs transition">Aktifkan Maintenance</button>
+                <button onclick="toggleMaintenanceMode(false)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs transition">Normal Mode</button>
+              </div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-700 p-4 rounded-xl space-y-3">
+              <h4 class="text-xs font-bold uppercase text-slate-300">Siarkan Pengumuman (Broadcast)</h4>
+              <div class="space-y-2 pt-2">
+                <input type="text" id="inputBroadcastMessage" placeholder="Contoh: Stok Opname akhir bulan..." class="w-full bg-slate-800 border border-slate-700 p-2.5 rounded-xl text-xs text-slate-200">
+              </div>
+              <button onclick="sendBroadcastAnnouncement()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl text-xs transition shadow">Siarkan Ke Seluruh Role</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- TAB 7: KAS KECIL -->
+      <div id="tabExpense" class="kasir-tab-content hidden space-y-4 animate-fade-in">
+        <div class="bg-slate-800/80 border border-slate-700/80 p-5 rounded-2xl space-y-4 max-w-xl mx-auto">
+          <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 00-2 2h2m2 4h10a2 2 0 00-2-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            Catat Pengeluaran Kas Kecil
+          </h3>
+          <form onsubmit="addExpenseRecord(event)" class="space-y-3 text-xs">
+            <div><input type="text" id="expenseDesc" required placeholder="Keterangan Pengeluaran" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-slate-200"></div>
+            <div><input type="number" id="expenseAmount" required min="1000" placeholder="Jumlah Nominal (Rp)" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl font-mono text-emerald-400"></div>
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl transition shadow">Simpan Pengeluaran</button>
+          </form>
+        </div>
+      </div>
+
+
+      <!-- TAB 8: CLOSING SHIFT -->
+      <div id="tabShift" class="kasir-tab-content hidden space-y-4 animate-fade-in">
+        <div class="bg-slate-800/80 border border-slate-700/80 p-5 rounded-2xl max-w-lg mx-auto space-y-4">
+          <h3 class="font-bold text-slate-100 text-sm">Rekap Laporan Shift Kasir</h3>
+          <div class="space-y-2 text-xs font-mono bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <div class="flex justify-between"><span class="text-slate-400">Total Omset Tunai:</span><span id="shiftCashTotal" class="text-emerald-400 font-bold">Rp 0</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Total Omset Non-Tunai:</span><span id="shiftNonCashTotal" class="text-sky-400 font-bold">Rp 0</span></div>
+            <div class="flex justify-between border-t border-slate-800 pt-2 font-bold text-white"><span>Grand Total Shift:</span><span id="shiftGrandTotal" class="text-emerald-300">Rp 0</span></div>
+          </div>
+          <button onclick="closeKasirShift()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition shadow">Tutup Shift Kasir</button>
+        </div>
+      </div>
+
+
+    </div>
+  
+<section id="tab-tabErpChat" class="kasir-tab-content hidden space-y-5 animate-fade-in">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div><h3 class="font-bold text-lg text-white">Chat Internal ERP</h3><p class="text-xs text-slate-400">Pesan disimpan di Google Sheet <b>Chats</b>. Pilih penerima berdasarkan pengguna atau role.</p></div>
+    <div id="erpChatStatus" class="text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">TERHUBUNG</div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div class="lg:col-span-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3">
+      <div class="flex gap-2"><select id="erpChatRoleFilter" onchange="erpChatRenderUsers()" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"><option value="ALL">Semua Role</option><option value="SUPER_ADMIN">Super Admin</option><option value="ADMIN_PERUSAHAAN">Admin Perusahaan</option><option value="AKUNTAN">Akuntan</option><option value="KASIR">Kasir</option><option value="MANAJEMEN_PUNCAK">Manajemen Puncak</option></select><button onclick="erpChatRefresh()" class="px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs">↻</button></div>
+      <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 cursor-pointer" onclick="erpChatSelect('ALL','ALL','Semua Pengguna')"><div class="font-bold text-xs text-indigo-200">📢 Semua Pengguna</div><div class="text-[10px] text-slate-400">Pesan internal umum</div></div>
+      <div id="erpChatUsers" class="space-y-2 max-h-[55vh] overflow-y-auto custom-scrollbar"></div>
+    </div>
+    <div class="lg:col-span-8 bg-slate-900/80 border border-slate-800 rounded-2xl min-h-[60vh] flex flex-col overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800"><div id="erpChatTargetTitle" class="font-bold text-sm text-white">Semua Pengguna</div><div id="erpChatTargetSub" class="text-[10px] text-slate-500">Broadcast internal</div></div>
+      <div id="erpChatMessages" class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-3"></div>
+      <form onsubmit="erpChatSend(event)" class="p-4 border-t border-slate-800 flex gap-2"><input id="erpChatInput" autocomplete="off" placeholder="Tulis pesan..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"><button class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold">Kirim</button></form>
+    </div>
+  </div>
+  <div id="erpBroadcastFeed" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4"><div class="font-bold text-sm text-white mb-3">Broadcast Super Admin</div><div id="erpBroadcastItems" class="space-y-2"></div></div>
+</section>
+
+</main>
+
+
+  <script>
+    // GLOBAL STATE MANAGEMENT
+    const STATE = {
+      activeCompanyId: 'COMP-001',
+      companies: [
+        { id: 'COMP-001', name: 'PT. Nusantara Mandiri' },
+        { id: 'COMP-002', name: 'CV. Nusantara Express' },
+        { id: 'COMP03', name: 'Toko Berkah Retail' }
+      ],
+      
+      users: [],
+      products: [],
+      messages: [],
+      history: [],
+      members: [],
+      queueCounter: 1, // Counter untuk nomor antrian otomatis
+      
+      activeUser: { id: '', name: '', role: 'KASIR' },
+      
+      cart: [],
+      heldCarts: [],
+      activeCategory: 'ALL',
+      paymentMethod: 'CASH',
+      
+      accounts: { drawerCash: 0, bank: 0, pettyCash: 0 },
+      selectedChatTarget: 'ALL',
+      
+      maintenance: {
+        isUnderMaintenance: false,
+        noticeText: 'Sistem sedang dalam mode Pemeliharaan (Maintenance) oleh Super Admin. Harap simpan pekerjaan Anda!',
+        logs: ['[2026-09-07 10:00] System Normal Operational - Checked by Super Admin']
+      }
+    };
+
+
+    window.onload = function() {
+      document.getElementById('currentDateDisplay') && 
+        (document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }));
+      initCompaniesDropdown();
+      fetchAppDataFromGAS();
+      enforceRoleAccess();
+      autoIncrementQueue(); // Set initial queue number
+    };
+
+
+    function autoIncrementQueue() {
+      const qNum = String(STATE.queueCounter).padStart(2, '0');
+      document.getElementById('inputQueueNo').value = `A-${qNum}`;
+    }
+
+
+    function fetchAppDataFromGAS() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        showToast('Mengambil data langsung dari Google Sheet...', 'info');
+        google.script.run.withSuccessHandler(function(data) {
+          if(data.users) STATE.users = data.users;
+          if(data.products) STATE.products = data.products;
+          if(data.messages) STATE.messages = data.messages;
+          if(data.accounts) STATE.accounts = data.accounts;
+          if(data.members) STATE.members = data.members;
+          
+          initUsersDropdown();
+          renderProductGrid();
+          renderProductTable();
+          renderUsersList();
+          renderChatMessages();
+          updateAccountDisplay();
+          renderMemberSelect();
+          renderMembersTable();
+          showToast('Data berhasil disinkronisasi dari GAS!', 'success');
+        }).withFailureHandler(function(err) {
+          showToast('Gagal memuat data dari GAS: ' + err, 'error');
+        }).getInitialData();
+      } else {
+        console.warn("GAS API `google.script.run` tidak tersedia. Sistem berjalan lokal tanpa data.");
+        if (STATE.users.length === 0) populateStandAloneDemoData();
+      }
+    }
+
+
+    function enforceRoleAccess() {
+      const btnMaintenance = document.getElementById('btnTabMaintenance');
+      if (STATE.activeUser && STATE.activeUser.role === 'SUPER_ADMIN') {
+        btnMaintenance.classList.remove('hidden');
+        btnMaintenance.classList.add('flex');
+      } else {
+        btnMaintenance.classList.add('hidden');
+        btnMaintenance.classList.remove('flex');
+        if (!document.getElementById('tabMaintenance').classList.contains('hidden')) {
+          switchKasirTab('tabPOS');
+        }
+      }
+    }
+
+
+    // TOAST & MODALS
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bg = type === 'success' ? 'bg-emerald-500 text-slate-950' : type === 'error' ? 'bg-rose-500 text-white' : 'bg-sky-500 text-slate-950';
+      toast.className = `toast-enter p-3 rounded-xl shadow-2xl font-bold text-xs flex items-center gap-2 ${bg} pointer-events-auto`;
+      toast.innerHTML = `<span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+
+    function showClearCartConfirm() {
+      if (STATE.cart.length === 0) return;
+      document.getElementById('modal-title').innerText = 'Kosongkan Keranjang';
+      document.getElementById('modal-message').innerText = 'Apakah Anda yakin ingin menghapus semua item dalam keranjang saat ini?';
+      document.getElementById('modal-confirm-btn').onclick = () => { confirmClearCart(); closeModal(); };
+      document.getElementById('custom-modal').classList.remove('hidden');
+      document.getElementById('custom-modal').classList.add('flex');
+      setTimeout(() => document.getElementById('modal-panel').classList.remove('scale-95', 'opacity-0'), 10);
+    }
+
+
+    function closeModal() {
+      document.getElementById('modal-panel').classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        document.getElementById('custom-modal').classList.add('hidden');
+        document.getElementById('custom-modal').classList.remove('flex');
+      }, 200);
+    }
+
+
+    // COMPANY & USER
+    function initCompaniesDropdown() {
+      const sel = document.getElementById('companySelector');
+      sel.innerHTML = STATE.companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+    function switchCompany(val) { STATE.activeCompanyId = val; showToast(`Berhasil ganti perusahaan`); }
+
+
+    function initUsersDropdown() {
+      const sel = document.getElementById('roleSelector');
+      if (STATE.users.length > 0) {
+        sel.innerHTML = STATE.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+        sel.value = STATE.activeUser.id;
+        document.getElementById('cashierBadgeName').innerText = `${STATE.activeUser.name}`;
+      }
+    }
+    function switchActiveUser(userId) {
+      const user = STATE.users.find(u => u.id === userId);
+      if (user) {
+        STATE.activeUser = user;
+        document.getElementById('cashierBadgeName').innerText = `${user.name}`;
+        enforceRoleAccess(); renderUsersList(); renderChatMessages();
+      }
+    }
+
+
+    // TABS
+    function switchKasirTab(tabId) {
+      document.querySelectorAll('.kasir-tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.kasir-tab-btn').forEach(btn => {
+        btn.classList.remove('text-emerald-400', 'border-emerald-400', 'bg-emerald-500/5');
+        btn.classList.add('text-slate-400', 'border-transparent');
+      });
+      document.getElementById(tabId).classList.remove('hidden');
+      const activeBtn = document.getElementById('btn' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+      if (activeBtn) activeBtn.classList.add('text-emerald-400', 'border-emerald-400', 'bg-emerald-500/5');
+      
+      if (tabId === 'tabPOS') setTimeout(() => document.getElementById('inputSearchProduct').focus(), 100);
+    }
+
+
+    // PRODUCTS
+    function renderProductGrid() {
+      const container = document.getElementById('productGrid');
+      const search = document.getElementById('inputSearchProduct').value.toLowerCase();
+      const filtered = STATE.products.filter(p => {
+        const matchesCat = STATE.activeCategory === 'ALL' || p.category === STATE.activeCategory;
+        const matchesSearch = p.name.toLowerCase().includes(search) || p.sku.includes(search);
+        return matchesCat && matchesSearch;
+      });
+
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-8 text-center text-slate-500 text-xs">Tidak ada produk ditemukan</div>`;
+        document.getElementById('badgeProductCount').innerText = '0'; return;
+      }
+
+
+      container.innerHTML = filtered.map(p => `
+        <div onclick="addToCart('${p.id}')" class="bg-slate-800 border border-slate-700/80 hover:border-emerald-500/60 p-3 rounded-2xl cursor-pointer hover:scale-[1.02] transition shadow-md flex flex-col justify-between group">
+          <div class="flex items-start justify-between">
+            <span class="text-2xl">${p.icon}</span>
+            <span class="text-[9px] font-mono font-bold bg-slate-900 border border-slate-700 text-slate-400 px-1.5 py-0.5 rounded-md">${p.sku}</span>
+          </div>
+          <div class="mt-2">
+            <h4 class="font-bold text-slate-100 text-xs line-clamp-1 group-hover:text-emerald-300 transition">${p.name}</h4>
+            <div class="flex justify-between items-center mt-1">
+              <span class="font-mono text-emerald-400 font-bold text-xs">Rp ${p.price.toLocaleString('id-ID')}</span>
+              <span class="text-[10px] text-slate-400">Stok: ${p.stock}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('badgeProductCount').innerText = STATE.products.length;
+    }
+
+
+    function renderProductTable() {
+      const tbody = document.getElementById('tblProductBody');
+      tbody.innerHTML = STATE.products.map(p => `
+        <tr class="hover:bg-slate-800/50 transition">
+          <td class="p-3">${p.icon} ${p.name}</td>
+          <td class="p-3 text-slate-400">${p.sku}</td>
+          <td class="p-3">${p.category}</td>
+          <td class="p-3 text-right text-slate-400">Rp ${p.cost.toLocaleString('id-ID')}</td>
+          <td class="p-3 text-right text-emerald-400">Rp ${p.price.toLocaleString('id-ID')}</td>
+          <td class="p-3 text-center">${p.stock}</td>
+        </tr>
+      `).join('');
+    }
+
+
+    function setCategory(cat) { STATE.activeCategory = cat; renderProductGrid(); }
+    function filterProducts() { renderProductGrid(); }
+    
+    function handleBarcodeKeyDown(e) {
+      if (e.key === 'Enter') {
+        const val = e.target.value.trim();
+        const prod = STATE.products.find(p => p.sku === val || p.sku.includes(val));
+        if (prod) {
+          addToCart(prod.id);
+          e.target.value = '';
+          showToast(`Berhasil menambahkan: ${prod.name}`);
+        } else {
+          showToast(`Produk tidak ditemukan`, 'error');
+        }
+      }
+    }
+
+
+    // CART
+    function addToCart(prodId) {
+      const prod = STATE.products.find(p => p.id === prodId);
+      if (!prod) return;
+      const existing = STATE.cart.find(c => c.id === prodId);
+      if (existing) {
+        if (existing.qty < prod.stock) existing.qty++;
+        else return showToast('Stok batas maks!', 'error');
+      } else {
+        if (prod.stock <= 0) return showToast('Stok habis!', 'error');
+        STATE.cart.push({ id: prod.id, name: prod.name, price: prod.price, qty: 1 });
+      }
+      renderCart();
+    }
+
+
+    function updateCartQty(prodId, delta) {
+      const item = STATE.cart.find(c => c.id === prodId);
+      const prod = STATE.products.find(p => p.id === prodId);
+      if (!item || !prod) return;
+      if(delta > 0 && item.qty >= prod.stock) return showToast('Stok maks', 'error');
+      item.qty += delta;
+      if (item.qty <= 0) STATE.cart = STATE.cart.filter(c => c.id !== prodId);
+      renderCart();
+    }
+
+
+    function renderCart() {
+      const container = document.getElementById('cartContainer');
+      if (STATE.cart.length === 0) {
+        container.innerHTML = `<div class="py-12 text-center text-slate-500 text-xs">Keranjang kosong</div>`;
+      } else {
+        container.innerHTML = STATE.cart.map(item => `
+          <div class="py-2.5 flex items-center justify-between text-xs">
+            <div class="flex-1 pr-2">
+              <h5 class="font-bold text-slate-200 line-clamp-1">${item.name}</h5>
+              <span class="font-mono text-slate-400 text-[11px]">Rp ${item.price.toLocaleString('id-ID')}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="updateCartQty('${item.id}', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-black">-</button>
+              <span class="font-mono font-bold w-5 text-center text-emerald-400">${item.qty}</span>
+              <button onclick="updateCartQty('${item.id}', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-black">+</button>
+            </div>
+          </div>
+        `).join('');
+      }
+      calculateCartTotals();
+    }
+
+
+    function calculateCartTotals() {
+      const subtotal = STATE.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+      const tax = document.getElementById('chkTax').checked ? Math.round(subtotal * 0.11) : 0;
+      
+      const memberSel = document.getElementById('selectMember');
+      const discPercInput = parseFloat(document.getElementById('inputDiscount').value) || 0;
+      let finalDisc = discPercInput;
+      
+      if (memberSel && memberSel.options[memberSel.selectedIndex]) {
+        const memberDisc = parseFloat(memberSel.options[memberSel.selectedIndex].dataset.disc) || 0;
+        finalDisc = Math.max(discPercInput, memberDisc);
+      }
+
+
+      const grandTotal = Math.max(0, subtotal + tax - Math.round(subtotal * (finalDisc / 100)));
+      document.getElementById('txtSubtotal').innerText = `Rp ${subtotal.toLocaleString('id-ID')}`;
+      document.getElementById('txtTax').innerText = `Rp ${tax.toLocaleString('id-ID')}`;
+      document.getElementById('txtGrandTotal').innerText = `Rp ${grandTotal.toLocaleString('id-ID')}`;
+      calculateChange();
+    }
+
+
+    function calculateChange() {
+      const gTotalStr = document.getElementById('txtGrandTotal').innerText.replace(/\D/g, '');
+      const grandTotal = parseInt(gTotalStr) || 0;
+      const paid = parseFloat(document.getElementById('inputCashPaid').value) || 0;
+      const change = Math.max(0, paid - grandTotal);
+      document.getElementById('txtChangeAmount').innerText = `Rp ${change.toLocaleString('id-ID')}`;
+    }
+
+
+    function addCashPaid(amount) {
+       let current = parseFloat(document.getElementById('inputCashPaid').value) || 0;
+       document.getElementById('inputCashPaid').value = current + amount;
+       calculateChange();
+    }
+    
+    function setCashPaidExact() {
+       const gTotalStr = document.getElementById('txtGrandTotal').innerText.replace(/\D/g, '');
+       document.getElementById('inputCashPaid').value = parseInt(gTotalStr) || 0;
+       calculateChange();
+    }
+
+
+    function setPaymentMethod(method) {
+      STATE.paymentMethod = method;
+      document.querySelectorAll('.pay-method-btn').forEach(b => b.classList.replace('bg-emerald-500/20', 'bg-slate-800'));
+      document.querySelectorAll('.pay-method-btn').forEach(b => b.classList.replace('text-emerald-300', 'text-slate-300'));
+      document.querySelectorAll('.pay-method-btn').forEach(b => b.classList.replace('border-emerald-500/50', 'border-slate-700'));
+      
+      const btnMap = { 'CASH':'btnPayCash', 'QRIS':'btnPayQris', 'TRANSFER':'btnPayTransfer' };
+      const activeBtn = document.getElementById(btnMap[method]);
+      if(activeBtn) {
+         activeBtn.classList.replace('bg-slate-800', 'bg-emerald-500/20');
+         activeBtn.classList.replace('text-slate-300', 'text-emerald-300');
+         activeBtn.classList.replace('border-slate-700', 'border-emerald-500/50');
+      }
+      
+      document.getElementById('cashPayBox').classList.toggle('hidden', method !== 'CASH');
+      setCashPaidExact();
+    }
+
+
+    // CHECKOUT & VOICE
+    function processCheckout(){
+  if(window.__checkoutBusy)return;if(!STATE.cart.length)return showToast('Keranjang belanja kosong!','error');if(!window.ERPBridge)return showToast('ERP belum siap.','error');
+  var customerName=document.getElementById('inputCustomerName').value.trim()||'Pelanggan Umum',queueNo=document.getElementById('inputQueueNo').value.trim()||'A-01';
+  var grandTotal=Number(document.getElementById('txtGrandTotal').innerText.replace(/\D/g,''))||0,subtotal=STATE.cart.reduce(function(s,i){return s+(Number(i.price)||0)*(Number(i.qty)||0);},0),paid=parseFloat(document.getElementById('inputCashPaid').value)||grandTotal,tax=document.getElementById('chkTax').checked?Math.round(subtotal*0.11):0,change=Math.max(0,paid-grandTotal);
+  if(STATE.paymentMethod==='CASH'&&paid<grandTotal)return showToast('Uang tunai kurang dari total bayar!','error');
+  var transaction={id:'TRX-'+Date.now()+'-'+Math.floor(Math.random()*1000),queueNo:queueNo,customerName:customerName,date:new Date().toISOString(),cashier:(STATE.activeUser||{}).name||'Kasir',items:STATE.cart.map(function(i){return{id:i.id,productId:i.productId||i.ProductID||i.id,sku:i.sku||i.SKU||'',name:i.name||i.Name||'',price:Number(i.price)||0,qty:Number(i.qty)||0,cost:Number(i.cost)||0,discount:Number(i.discount)||0,tax:Number(i.tax)||0};}),subtotal:subtotal,tax:tax,discount:0,grandTotal:grandTotal,paymentMethod:STATE.paymentMethod,paid:paid,change:change};
+  window.__checkoutBusy=true;setCashierActionLoading('checkout',true,'Menyimpan transaksi...');
+  ERPBridge.call('saveTransaction',transaction,function(res){if(!res||!res.success)throw new Error('Server tidak mengonfirmasi transaksi.');var saved=res.transaction||transaction;saved.id=res.txId||saved.id;saved.status='PENDING_AKUNTAN';var idx=STATE.history.findIndex(function(x){return String(x.id||x.TxID)===String(saved.id);});if(idx<0)STATE.history.unshift(saved);else STATE.history[idx]=saved;renderHistoryTable();generateReceiptHTML(transaction);document.getElementById('receipt-modal').classList.remove('hidden');document.getElementById('receipt-modal').classList.add('flex');playCheckoutVoice(transaction);STATE.cart=[];document.getElementById('inputCashPaid').value='';document.getElementById('inputCustomerName').value='';STATE.queueCounter++;autoIncrementQueue();renderCart();setCashierActionLoading('checkout',false);window.__checkoutBusy=false;showToast('Transaksi tersimpan di Sheet & masuk antrean Akuntan.','success');},function(er){window.__checkoutBusy=false;setCashierActionLoading('checkout',false);showToast((er&&er.message)||'Transaksi gagal tersimpan ke Google Sheet.','error');});
+}
+
+    function playCheckoutVoice(trx) {
+       if ('speechSynthesis' in window) {
+           const limitItems = trx.items.slice(0, 2).map(i => i.qty + ' ' + i.name).join(' dan ');
+           const moreText = trx.items.length > 2 ? ' dan lainnya' : '';
+           let methodStr = trx.paymentMethod === 'CASH' ? 'Tunai' : trx.paymentMethod;
+           
+           let text = `Transaksi berhasil diproses. Nomor antrian ${trx.queueNo}, atas nama ${trx.customerName}. Membeli ${limitItems}${moreText}. Total ${trx.grandTotal} rupiah. Pembayaran via ${methodStr}. Terima kasih.`;
+           
+           const utterance = new SpeechSynthesisUtterance(text);
+           utterance.lang = 'id-ID';
+           utterance.rate = 0.95;
+           window.speechSynthesis.speak(utterance);
+       }
+    }
+
+
+    function generateReceiptHTML(trx) {
+      const itemsHtml = trx.items.map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.name} x${i.qty}</span><span>Rp ${(i.price * i.qty).toLocaleString('id-ID')}</span></div>`).join('');
+      const html = `
+        <div style="text-align:center; margin-bottom:10px; border-bottom:1px dashed #ccc; padding-bottom:10px;">
+          <h3 style="margin:0; font-weight:bold;">Kasir POS</h3>
+          <p style="margin:0; font-size:10px;">Bukti Pembayaran & Antrian</p>
+        </div>
+        <div style="margin-bottom:10px; font-size:11px; font-weight:bold; background:#f3f4f6; padding:5px; text-align:center;">
+          No. Antrian: ${trx.queueNo} | Pelanggan: ${trx.customerName}
+        </div>
+        <div style="margin-bottom:10px; font-size:11px;">
+          <div>No: ${trx.id}</div>
+          <div>Tgl: ${trx.date}</div>
+          <div>Kasir: ${trx.cashier}</div>
+          <div>Metode: ${trx.paymentMethod}</div>
+        </div>
+        <div style="border-bottom:1px dashed #ccc; padding-bottom:5px; margin-bottom:5px; font-size:11px;">${itemsHtml}</div>
+        <div style="font-size:11px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px; margin-top:5px;"><span>TOTAL:</span><span>Rp ${trx.grandTotal.toLocaleString('id-ID')}</span></div>
+          <div style="display:flex; justify-content:space-between; margin-top:5px;"><span>Bayar:</span><span>Rp ${trx.paid.toLocaleString('id-ID')}</span></div>
+          <div style="display:flex; justify-content:space-between;"><span>Kembali:</span><span>Rp ${trx.change.toLocaleString('id-ID')}</span></div>
+        </div>
+      `;
+      document.getElementById('printable-receipt').innerHTML = html;
+    }
+
+
+    function closeReceiptModal() {
+      document.getElementById('receipt-modal').classList.add('hidden');
+      document.getElementById('receipt-modal').classList.remove('flex');
+      document.getElementById('inputSearchProduct').focus();
+    }
+    function printReceipt() { window.print(); }
+    function copyReceiptText() { navigator.clipboard.writeText(document.getElementById('printable-receipt').innerText); showToast('Teks disalin'); }
+
+
+    // HELD CARTS
+    function holdCurrentCart() {
+      if (STATE.cart.length === 0) return showToast('Keranjang kosong', 'error');
+      STATE.heldCarts.push({ id: 'HOLD-' + Date.now(), time: new Date().toLocaleTimeString('id-ID'), items: [...STATE.cart] });
+      STATE.cart = []; renderCart();
+      document.getElementById('badgeHeldCount').innerText = STATE.heldCarts.length;
+      showToast('Order ditunda');
+    }
+    function openHeldOrdersModal() {
+      const container = document.getElementById('heldOrdersList');
+      if (STATE.heldCarts.length === 0) container.innerHTML = `<div class="text-center text-slate-500 py-5">Kosong</div>`;
+      else container.innerHTML = STATE.heldCarts.map((h, idx) => `
+          <div class="bg-slate-900 border border-slate-700 p-3 rounded-xl flex justify-between items-center">
+            <div><h5 class="text-xs font-bold text-slate-200">Pending Order #${idx+1}</h5><p class="text-[10px] text-slate-400">Pukul ${h.time} - ${h.items.length} Item</p></div>
+            <button onclick="restoreHeldCart('${h.id}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs">Lanjutkan</button>
+          </div>
+        `).join('');
+      document.getElementById('held-orders-modal').classList.remove('hidden'); document.getElementById('held-orders-modal').classList.add('flex');
+    }
+    function closeHeldOrdersModal() {
+      document.getElementById('held-orders-modal').classList.add('hidden'); document.getElementById('held-orders-modal').classList.remove('flex');
+    }
+    function restoreHeldCart(id) {
+      const idx = STATE.heldCarts.findIndex(h => h.id === id);
+      if (idx > -1) {
+        if (STATE.cart.length > 0) holdCurrentCart();
+        STATE.cart = STATE.heldCarts[idx].items;
+        STATE.heldCarts.splice(idx, 1);
+        renderCart(); closeHeldOrdersModal();
+        document.getElementById('badgeHeldCount').innerText = STATE.heldCarts.length;
+      }
+    }
+    function confirmClearCart() { STATE.cart = []; renderCart(); showToast('Keranjang dikosongkan', 'info'); }
+
+
+    // SCANNER IMPROVED
+    let scannerObj = null;
+    function openScannerModal() {
+      document.getElementById('scanner-modal').classList.remove('hidden');
+      document.getElementById('scanner-modal').classList.add('flex');
+      document.getElementById('scannerStatusText').innerText = "Meminta izin kamera...";
+      
+      if (!scannerObj) scannerObj = new Html5Qrcode("reader");
+      
+      scannerObj.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          playBeepSound();
+          closeScannerModal();
+          handleScannedResult(decodedText);
+        },
+        () => {}
+      ).then(() => {
+          document.getElementById('scannerStatusText').innerText = "Arahkan barcode / QR";
+      }).catch(err => {
+          document.getElementById('scannerStatusText').innerText = "Gagal akses kamera belakang.";
+          console.error(err);
+      });
+    }
+
+
+    function closeScannerModal() {
+      document.getElementById('scanner-modal').classList.add('hidden');
+      document.getElementById('scanner-modal').classList.remove('flex');
+      if (scannerObj && scannerObj.isScanning) {
+        scannerObj.stop().catch(console.error);
+      }
+    }
+    
+    function handleScannedResult(text) {
+      const prod = STATE.products.find(p => p.sku === text);
+      if (prod) { addToCart(prod.id); showToast(`Scan: ${prod.name}`); }
+      else showToast(`SKU ${text} tidak ditemukan`, 'error');
+    }
+
+
+    function playBeepSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.connect(gainNode); gainNode.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.1);
+      } catch(e){}
+    }
+
+
+    // MEMBERSHIP
+    function renderMemberSelect() {
+      const sel = document.getElementById('selectMember');
+      let html = '<option value="NONE" data-disc="0">Pilih Member (Opsional)</option>';
+      html += STATE.members.map(m => `<option value="${m.id}" data-disc="${m.discount}">${m.name} - Diskon ${m.discount}%</option>`).join('');
+      sel.innerHTML = html;
+    }
+
+
+    function renderMembersTable() {
+       const tbody = document.getElementById('tblMemberBody');
+       if(STATE.members.length === 0) {
+         tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-500">Belum ada member</td></tr>`; return;
+       }
+       tbody.innerHTML = STATE.members.map(m => `
+        <tr class="hover:bg-slate-800/50 border-b border-slate-700/50">
+          <td class="p-3 font-bold text-emerald-400">${m.id}</td>
+          <td class="p-3 text-slate-200">${m.name}</td>
+          <td class="p-3 text-slate-400">${m.discount}%</td>
+        </tr>
+       `).join('');
+    }
+
+
+    function openMemberModal() {
+      document.getElementById('member-modal').classList.remove('hidden');
+      document.getElementById('member-modal').classList.add('flex');
+      document.getElementById('formMember').reset();
+      document.getElementById('memberId').value = 'MBR' + Math.floor(1000 + Math.random() * 9000);
+    }
+    
+    function closeMemberModal() {
+      document.getElementById('member-modal').classList.add('hidden');
+      document.getElementById('member-modal').classList.remove('flex');
+    }
+
+
+    function saveMember(e) {
+      e.preventDefault();
+      const newMember = {
+        id: document.getElementById('memberId').value,
+        name: document.getElementById('memberName').value,
+        discount: parseInt(document.getElementById('memberTier').value)
+      };
+      STATE.members.push(newMember);
+      renderMemberSelect();
+      renderMembersTable();
+      closeMemberModal();
+      showToast('Member baru berhasil disimpan!');
+      if(window.ERPBridge&&ERPBridge.call) ERPBridge.call('saveMember',newMember,null,function(err){showToast(err.message||'Gagal menyimpan member','error');});
+    }
+
+
+    function exportHistoryCSV() {
+       if (STATE.history.length === 0) return showToast('Belum ada history', 'error');
+       const headers = ['Waktu', 'No Order', 'Antrian', 'Pelanggan', 'Kasir', 'Metode Bayar', 'Total(Rp)'];
+       const rows = STATE.history.map(t => [t.date, t.id, t.queueNo, t.customerName, t.cashier, t.paymentMethod, t.grandTotal]);
+       let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+       const encodedUri = encodeURI(csvContent);
+       const link = document.createElement("a");
+       link.setAttribute("href", encodedUri);
+       link.setAttribute("download", `History_POS_${Date.now()}.csv`);
+       document.body.appendChild(link);
+       link.click();
+       document.body.removeChild(link);
+       showToast('CSV berhasil di-download');
+    }
+
+
+    // PRODUCT MODAL
+    function openProductModal() {
+      document.getElementById('product-modal').classList.remove('hidden'); document.getElementById('product-modal').classList.add('flex');
+      document.getElementById('formProduct').reset(); generateRandomSku();
+    }
+    function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); document.getElementById('product-modal').classList.remove('flex'); }
+    function generateRandomSku() { document.getElementById('prodSku').value = '899' + Math.floor(1000 + Math.random() * 9000); }
+    function saveProduct(e) {
+      e.preventDefault();
+      const newProd = { id: 'PROD-' + Date.now(), sku: document.getElementById('prodSku').value, name: document.getElementById('prodName').value, category: document.getElementById('prodCat').value, cost: parseInt(document.getElementById('prodCost').value), price: parseInt(document.getElementById('prodPrice').value), stock: parseInt(document.getElementById('prodStock').value), icon: document.getElementById('prodIcon').value || '📦' };
+      STATE.products.push(newProd); renderProductGrid(); renderProductTable(); closeProductModal(); showToast('Produk disimpan');
+      if(window.ERPBridge&&ERPBridge.call) ERPBridge.call('saveProduct',newProd,null,function(err){showToast(err.message||'Gagal menyimpan produk','error');});
+    }
+
+
+    // HISTORY
+    function renderHistoryTable() {
+      const tbody = document.getElementById('tblHistoryBody');
+      if (STATE.history.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-slate-500">Belum ada transaksi</td></tr>`; document.getElementById('badgeHistoryCount').innerText = '0'; return; }
+      tbody.innerHTML = STATE.history.map(t => `
+        <tr class="hover:bg-slate-800/50">
+          <td class="p-3 text-[11px]">${t.date}</td>
+          <td class="p-3 text-emerald-400 font-bold">${t.id}</td>
+          <td class="p-3"><span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold">${t.queueNo}</span></td>
+          <td class="p-3 text-slate-200">${t.customerName}</td>
+          <td class="p-3">${t.cashier}</td>
+          <td class="p-3 text-right">Rp ${t.grandTotal.toLocaleString('id-ID')}</td>
+        </tr>
+      `).join('');
+      document.getElementById('badgeHistoryCount').innerText = STATE.history.length;
+    }
+    function syncHistoryWithGAS() { showToast('Sync ke Google Sheet berjalan...', 'info'); }
+
+
+    // OPNAME
+    function updateAccountDisplay() {
+      document.getElementById('accDrawerVal').innerText = `Rp ${STATE.accounts.drawerCash.toLocaleString('id-ID')}`;
+      document.getElementById('accBankVal').innerText = `Rp ${STATE.accounts.bank.toLocaleString('id-ID')}`;
+      document.getElementById('accPettyVal').innerText = `Rp ${STATE.accounts.pettyCash.toLocaleString('id-ID')}`;
+    }
+    function calcOpname() {
+      const d100 = (parseInt(document.getElementById('den100k').value)||0)*100000; const d50 = (parseInt(document.getElementById('den50k').value)||0)*50000;
+      const d20 = (parseInt(document.getElementById('den20k').value)||0)*20000; const d10 = (parseInt(document.getElementById('den10k').value)||0)*10000;
+      const d5 = (parseInt(document.getElementById('den5k').value)||0)*5000; const d2 = (parseInt(document.getElementById('den2k').value)||0)*2000;
+      const d1 = (parseInt(document.getElementById('den1k').value)||0)*1000; const dC = parseInt(document.getElementById('denCoins').value)||0;
+      document.getElementById('txtOpnameTotal').innerText = `Rp ${(d100+d50+d20+d10+d5+d2+d1+dC).toLocaleString('id-ID')}`;
+    }
+
+
+    // MESSAGES
+    function renderUsersList() {
+      const container = document.getElementById('usersListContainer');
+      container.innerHTML = `<div onclick="selectChatTarget('ALL')" class="p-2.5 rounded-xl border cursor-pointer flex items-center gap-2 ${STATE.selectedChatTarget==='ALL'?'bg-purple-600/20 border-purple-500/50':'bg-slate-950 border-slate-800'}"><div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center font-bold text-white text-xs">ALL</div><div><h5 class="text-xs font-bold text-slate-200">Broadcast</h5></div></div>` + STATE.users.filter(u=>u.id!==STATE.activeUser.id).map(u => `<div onclick="selectChatTarget('${u.id}')" class="p-2.5 rounded-xl border cursor-pointer flex items-center gap-2 ${STATE.selectedChatTarget===u.id?'bg-purple-600/20 border-purple-500/50':'bg-slate-950 border-slate-800'}"><div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 text-xs">${u.name.charAt(0)}</div><div><h5 class="text-xs font-bold text-slate-200">${u.name}</h5><p class="text-[10px] text-slate-400">${u.role}</p></div></div>`).join('');
+    }
+    function selectChatTarget(id) { STATE.selectedChatTarget = id; renderUsersList(); renderChatMessages(); }
+    function renderChatMessages() {
+      const c = document.getElementById('chatMessagesContainer');
+      const filtered = STATE.messages.filter(m => (STATE.selectedChatTarget==='ALL' && m.receiverId==='ALL') || (m.senderId===STATE.activeUser.id && m.receiverId===STATE.selectedChatTarget) || (m.senderId===STATE.selectedChatTarget && m.receiverId===STATE.activeUser.id) || m.receiverId==='ALL');
+      c.innerHTML = filtered.map(m => m.receiverId==='ALL' && m.senderId!==STATE.activeUser.id ? `<div class="bg-amber-500/10 border border-amber-500/30 p-2 rounded w-[90%] mb-2"><span class="text-[9px] text-amber-400">BROADCAST</span><p class="text-xs">${m.text}</p></div>` : `<div class="flex flex-col ${m.senderId===STATE.activeUser.id?'items-end':'items-start'} mb-2"><div class="max-w-[80%] p-2 rounded-xl ${m.senderId===STATE.activeUser.id?'bg-purple-600':'bg-slate-800'}"><p class="text-xs">${m.text}</p></div></div>`).join('');
+      c.scrollTop = c.scrollHeight;
+    }
+    function sendChatMessage(e) {
+      e.preventDefault(); const text = document.getElementById('inputChatMessage').value.trim(); if(!text) return;
+      const target=STATE.selectedChatTarget||'ALL';
+      if(window.ERPBridge&&ERPBridge.call){
+        ERPBridge.call('sendInternalChat',{text:text,receiverId:target,roleTarget:target==='ALL'?'ALL':''},function(r){
+          if(r&&r.chat){ STATE.chats=STATE.chats||[]; STATE.chats.push(r.chat); }
+          document.getElementById('inputChatMessage').value=''; fetchUsersAndMessagesFromGAS(); showToast('Pesan tersimpan di Chats','success');
+        },function(err){showToast(err.message||'Pesan gagal dikirim','error');});
+      } else { showToast('Session ERP belum siap','error'); }
+    }
+    function fetchUsersAndMessagesFromGAS() { fetchAppDataFromGAS(); }
+
+
+    // MAINTENANCE
+    function toggleMaintenanceMode(on) { showToast('Kontrol maintenance hanya tersedia untuk Super Admin','error'); }
+    function checkMaintenanceStatus() { document.getElementById('maintenanceBanner').classList.toggle('hidden', !STATE.maintenance.isUnderMaintenance); }
+    function hideMaintenanceBanner() { document.getElementById('maintenanceBanner').classList.add('hidden'); }
+    function sendBroadcastAnnouncement() { showToast('Broadcast dibuat oleh Super Admin melalui Control Center','info'); }
+
+
+    // EXPENSE & SHIFT
+    function addExpenseRecord(e) {
+      e.preventDefault(); const amt = parseInt(document.getElementById('expenseAmount').value);
+      if(amt > STATE.accounts.pettyCash) return showToast('Kas tidak cukup', 'error');
+      STATE.accounts.pettyCash -= amt; updateAccountDisplay(); showToast('Pengeluaran dicatat'); document.getElementById('expenseAmount').value=''; document.getElementById('expenseDesc').value='';
+    }
+    function closeKasirShift() { showToast('Shift ditutup & direkap.', 'info'); }
+
+
+    // GAS MODAL
+    function openGasModal() { document.getElementById('gas-modal').classList.remove('hidden'); document.getElementById('gas-modal').classList.add('flex'); }
+    function closeGasModal() { document.getElementById('gas-modal').classList.add('hidden'); document.getElementById('gas-modal').classList.remove('flex'); }
+    function testGasConnection() { fetchAppDataFromGAS(); }
+
+
+    // MOCK DATA
+    function populateStandAloneDemoData() {
+      STATE.users = [{id:'USR01',name:'Budi',role:'KASIR'},{id:'USR03',name:'Super Admin Utama',role:'SUPER_ADMIN'}];
+      STATE.products = [
+        {id:'P1',sku:'8991',name:'Kopi Susu',category:'MINUMAN',cost:8000,price:18000,stock:45,icon:'☕'},
+        {id:'P2',sku:'8992',name:'Roti Bakar',category:'MAKANAN',cost:10000,price:22000,stock:30,icon:'🍞'}
+      ];
+      STATE.members = [
+        {id:'MBR001', name:'Siti Rahma', discount: 10},
+        {id:'MBR002', name:'Bambang VIP', discount: 15}
+      ];
+      STATE.messages = [{id:1,senderId:'USR03',text:'[DEMO] Tes',receiverId:'ALL'}];
+      STATE.accounts = {drawerCash:350000,bank:150000,pettyCash:50000};
+      initUsersDropdown(); renderProductGrid(); renderProductTable(); renderUsersList(); renderChatMessages(); updateAccountDisplay(); renderMemberSelect(); renderMembersTable();
+    }
+  </script>
+<script>
+/* ERP INTEGRATION BRIDGE v2 */
+window.ERPBridge = window.ERPBridge || (function(){
+  const KEY='erpSession';
+  function session(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+  function save(res){if(res&&res.token){localStorage.setItem(KEY,JSON.stringify({token:res.token,user:res.userData||res.user||{}}));} return res;}
+  function clear(){localStorage.removeItem(KEY);}
+  function call(action,payload,onSuccess,onError){
+    payload=payload||{}; const s=session();
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia. Buka URL Web App resmi.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Backend error'});}).apiCall(action,payload,s?s.token:'');
+  }
+  function bootstrap(page,onSuccess,onError){
+    const s=session();
+    if(!s||!s.token){onError&&onError({code:'NO_SESSION',message:'Sesi login tidak ditemukan.'});return;}
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Bootstrap gagal'});}).getIntegratedBootstrap(s.token,page||'');
+  }
+  return {session,save,clear,call,bootstrap};
+})();
+</script><script>
+(function(){
+  function applyBootstrap(res){
+    if(!res||!res.user)return;
+    const u=res.user; STATE.activeUser={id:u.id||u.UserID,name:u.name||u.Name,role:u.role||u.Role}; STATE.activeCompanyId=res.companyId||STATE.activeCompanyId;
+    const d=res.data||{}; if(d.users)STATE.users=d.users; if(d.products)STATE.products=d.products; if(d.messages)STATE.messages=d.messages; if(d.members)STATE.members=d.members; if(d.history)STATE.history=d.history; if(d.accounts)STATE.accounts=d.accounts; if(d.companies)STATE.companies=d.companies.map(c=>({id:c.CompanyID||c.id,name:c.CompanyName||c.name}));
+    checkMaintenanceStatus(); initCompaniesDropdown(); initUsersDropdown(); renderProductGrid(); renderProductTable(); renderHistoryTable(); renderUsersList(); renderChatMessages(); updateAccountDisplay(); renderMemberSelect(); renderMembersTable(); autoIncrementQueue();
+  }
+  function boot(){ERPBridge.bootstrap('Kasir',applyBootstrap,function(e){showToast(e.message||'Sesi tidak valid','error');});}
+  window.addEventListener('DOMContentLoaded',boot,{once:true});
+  window.syncHistoryWithGAS=function(){ERPBridge.call('getTransactionsHistory',{},function(items){STATE.history=items||[];renderHistoryTable();showToast('Sinkronisasi','History transaksi diperbarui','info');},function(e){showToast('Sync gagal',e.message,'error');});};
+  window.testGasConnection=function(){ERPBridge.call('getErpOverview',{},function(r){showToast('Terhubung','ERP aktif. '+r.kpis.transactions+' transaksi tersinkron.','info');},function(e){showToast('Koneksi gagal',e.message,'error');});};
+})();
+</script>
+
+<script>
+/* ERP COMMUNICATION CENTER v1 */
+(function(){
+  const C={users:[],chats:[],broadcasts:[],targetId:'ALL',targetRole:'ALL',user:null,maintenance:null,lastBroadcastKey:''};
+  window.ERPComm=C;
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});}
+  function roleLabel(r){return ({SUPER_ADMIN:'Super Admin',ADMIN_PERUSAHAAN:'Admin Perusahaan',AKUNTAN:'Akuntan',KASIR:'Kasir',MANAJEMEN_PUNCAK:'Manajemen Puncak'}[String(r||'').toUpperCase()]||r||'-');}
+  function call(a,p,s){if(window.ERPBridge&&ERPBridge.call)return ERPBridge.call(a,p,s,function(e){},function(e){erpToast(e.message||'Gagal','error')});}
+  function getToken(){try{const x=JSON.parse(localStorage.getItem('erpSession')||'null');return x&&x.token?x.token:''}catch(e){return ''}}
+  function notify(kind,msg){if(typeof showToast==='function'){try{showToast(msg,kind||'info');return}catch(e){}} if(typeof Swal!=='undefined') Swal.fire(msg);}
+  window.erpToast=notify;
+  function renderUsers(){
+    const box=document.getElementById('erpChatUsers'),filter=(document.getElementById('erpChatRoleFilter')||{}).value||'ALL'; if(!box)return;
+    box.innerHTML=C.users.filter(u=>u.id!==((C.user||{}).id||'')&&(filter==='ALL'||String(u.role||'').toUpperCase()===filter)).map(u=>`<button type="button" onclick="erpChatSelect('${esc(u.id)}','${esc(u.role)}','${esc(u.name||u.email)}')" class="w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 hover:bg-slate-950 transition"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-indigo-500/15 text-indigo-300 flex items-center justify-center text-xs font-bold">${esc((u.name||'?').charAt(0).toUpperCase())}</div><div class="min-w-0"><div class="text-xs font-bold text-white truncate">${esc(u.name||u.email)}</div><div class="text-[10px] text-slate-500 truncate">${esc(roleLabel(u.role))}</div></div></div></button>`).join('')||'<div class="text-xs text-slate-500 p-3">Tidak ada pengguna untuk filter ini.</div>';
+  }
+  function renderMessages(){
+    const box=document.getElementById('erpChatMessages'); if(!box)return;
+    const me=(C.user&&C.user.id)||''; const selected=C.targetId||'ALL'; const role=C.targetRole||'ALL';
+    const arr=C.chats.filter(m=>{
+      const sender=String(m.SenderID||m.senderId||''); const receiver=String(m.ReceiverID||m.receiverId||''); const rt=String(m.RoleTarget||m.roleTarget||'').toUpperCase();
+      if(selected==='ALL'&&role==='ALL') return rt==='ALL'||receiver==='ALL'||receiver==='';
+      if(role!=='ALL') return (rt===role||rt==='ROLE:'+role)&& (sender===me||receiver===me||sender!=='' );
+      return (sender===me&&receiver===selected)||(receiver===me&&sender===selected);
+    });
+    box.innerHTML=arr.map(m=>{const mine=String(m.SenderID||m.senderId||'')===String(me);return `<div class="flex ${mine?'justify-end':'justify-start'}"><div class="max-w-[82%] px-3 py-2.5 rounded-2xl ${mine?'bg-indigo-600 text-white':'bg-slate-800 text-slate-200'}"><div class="text-[9px] opacity-70 mb-1">${esc(m.Pengirim||m.SenderName||'User')} · ${esc(m.Waktu||m.Time||'')}</div><div class="text-xs leading-relaxed whitespace-pre-wrap">${esc(m.Pesan||m.Text||'')}</div></div></div>`}).join('')||'<div class="h-full min-h-[240px] flex items-center justify-center text-xs text-slate-500">Belum ada pesan pada percakapan ini.</div>';
+    box.scrollTop=box.scrollHeight;
+  }
+  function renderBroadcasts(){
+    const box=document.getElementById('erpBroadcastItems'), latest=C.broadcasts||[]; if(box)box.innerHTML=latest.map(b=>`<div class="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5"><div class="flex items-center justify-between gap-2"><b class="text-xs text-amber-300">${esc(b.Title||'Broadcast')}</b><span class="text-[9px] text-slate-500">${esc(b.Date||b.CreatedAt||'')}</span></div><p class="text-xs text-slate-300 mt-1 whitespace-pre-wrap">${esc(b.Message||'')}</p><div class="text-[9px] text-slate-500 mt-1">Target: ${esc(b.Target||'ALL')}</div></div>`).join('')||'<div class="text-xs text-slate-500">Belum ada broadcast.</div>';
+    const top=latest[0]; const n=document.getElementById('erpGlobalNotice'); if(top&&n){document.getElementById('erpGlobalNoticeTitle').textContent=top.Title||'Pengumuman Sistem';document.getElementById('erpGlobalNoticeText').textContent=top.Message||'';n.classList.remove('hidden');}
+  }
+  function apply(res){
+    if(!res)return; C.user=res.user||C.user; C.users=res.users||[]; C.chats=res.chats||[]; C.broadcasts=res.broadcasts||[]; C.maintenance=res.maintenance||null;
+    renderUsers();renderMessages();renderBroadcasts();applyMaintenance(C.maintenance);
+  }
+  function applyMaintenance(m){
+    const overlay=document.getElementById('erpMaintenanceOverlay'), txt=document.getElementById('erpMaintenanceText'); if(!overlay)return;
+    const role=String((C.user||{}).role||'').toUpperCase(); const on=!!(m&&m.isUnderMaintenance); if(txt)txt.textContent=(m&&m.noticeText)||'Operasional sementara dikunci oleh Super Admin.';
+    if(on&&role!=='SUPER_ADMIN')overlay.classList.remove('hidden'); else overlay.classList.add('hidden');
+    if(typeof checkMaintenanceStatus==='function' && role==='SUPER_ADMIN') try{checkMaintenanceStatus()}catch(e){}
+  }
+  window.applyMaintenance=applyMaintenance;
+  window.closeErpNotice=function(){const n=document.getElementById('erpGlobalNotice');if(n)n.classList.add('hidden');};
+  window.erpChatSelect=function(id,role,name){C.targetId=id;C.targetRole=role==='ALL'?'ALL':'';const t=document.getElementById('erpChatTargetTitle'),s=document.getElementById('erpChatTargetSub');if(t)t.textContent=name||'Penerima';if(s)s.textContent=role==='ALL'?'Semua pengguna':roleLabel(role);renderUsers();renderMessages();};
+  window.erpChatRenderUsers=renderUsers;
+  window.erpChatSend=function(e){
+    e.preventDefault(); const input=document.getElementById('erpChatInput'); const text=(input&&input.value||'').trim(); if(!text)return;
+    const payload={text:text,receiverId:C.targetId||'ALL',roleTarget:C.targetRole||'ALL'};
+    if(input)input.disabled=true;
+    ERPBridge.call('sendInternalChat',payload,function(r){if(input){input.value='';input.disabled=false;} if(r&&r.chat)C.chats.push(r.chat);renderMessages();},function(err){if(input)input.disabled=false;notify('error',err.message||'Gagal mengirim pesan');});
+  };
+  window.erpChatRefresh=function(){
+    const s=ERPBridge.session&&ERPBridge.session(); if(!s||!s.token)return;
+    ERPBridge.call('getCommunicationData',{},function(r){apply(r)},function(e){notify('error',e.message||'Gagal memuat komunikasi');});
+  };
+  window.erpRefreshCommunication=window.erpChatRefresh;
+  window.erpCommBoot=function(){erpChatRefresh();};
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(erpCommBoot,350);});
+})();
+</script>
+
+<script>
+/* CASHIER ERP SYNC & DELIVERY VERIFICATION v1 */
+(function(){
+  window.erpForceSync=function(silent){
+    if(!window.ERPBridge) return;
+    ERPBridge.call('syncWorkspaceData',{},function(r){
+      const d=r&&r.data||{};
+      if(Array.isArray(d.history)) STATE.history=d.history;
+      if(Array.isArray(d.transactions)) STATE.history=d.transactions;
+      if(Array.isArray(d.products)) STATE.products=d.products;
+      if(Array.isArray(d.users)) STATE.users=d.users;
+      if(d.accounts) STATE.accounts=d.accounts;
+      if(Array.isArray(r?.communication?.chats)) { /* communication center owns its own state */ }
+      renderHistoryTable(); renderProductGrid(); renderProductTable(); updateAccountDisplay(); initUsersDropdown(); renderUsersList(); renderChatMessages();
+      if(!silent) showToast('Sinkronisasi Berhasil','Data Kasir telah dibaca ulang dari Google Sheet.','success');
+    },function(e){showToast('Sinkronisasi Gagal',e.message||'Gagal mengambil data ERP','error');});
+  };
+  window.verifyLastCashierTransaction=function(txId){
+    ERPBridge.call('verifyTransactionFlow',{txId:txId},function(r){
+      if(r&&r.found) showToast('ERP Terverifikasi',`Transaksi ${r.txId} tersimpan. Status: ${r.status}${r.approval?' • Approval: '+r.approval.Status:''}`,'success');
+      else showToast('Belum Ditemukan','Transaksi belum terbaca pada database ERP.','error');
+    },function(e){showToast('Verifikasi Gagal',e.message||'Gagal verifikasi','error');});
+  };
+  const _saveOld=window.processCheckout;
+  if(typeof _saveOld==='function'){
+    window.processCheckout=function(){
+      const before=STATE.cart.map(x=>({id:x.id,qty:x.qty}));
+      const result=_saveOld.apply(this,arguments);
+      setTimeout(function(){
+        const last=STATE.history&&STATE.history[0];
+        if(last&&last.id){ verifyLastCashierTransaction(last.id); }
+      },1200);
+      return result;
+    };
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    const btn=document.createElement('button');btn.type='button';btn.id='erpSyncBtn';btn.textContent='↻ Sinkronisasi ERP';
+    btn.className='fixed bottom-5 left-5 z-[90] px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg';
+    btn.onclick=window.erpForceSync;document.body.appendChild(btn);
+  },{once:true});
+})();
+</script>
+
+
+<script>
+(function(){
+  var roles=[['AKUNTAN','Akuntan'],['ADMIN_PERUSAHAAN','Admin Perusahaan'],['MANAJEMEN_PUNCAK','Manajemen Puncak'],['SUPER_ADMIN','Super Admin'],['KASIR','Kasir']],chatBusy=false,syncBusy=false;
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});}
+  window.renderUsersList=function(){var q=document.getElementById('chatRoleQuickList'),c=document.getElementById('usersListContainer'),me=(STATE.activeUser||{});if(q)q.innerHTML=roles.map(function(x){return'<button type="button" onclick="selectChatTarget(\'ROLE:'+x[0]+'\')" class="text-[10px] p-2 rounded-lg border '+(STATE.selectedChatTarget==='ROLE:'+x[0]?'bg-indigo-600/30 border-indigo-500/50 text-white':'bg-slate-950 border-slate-800 text-slate-400')+'">'+x[1]+'</button>';}).join('');if(c)c.innerHTML='<div onclick="selectChatTarget(\'ALL\')" class="p-2.5 rounded-xl border cursor-pointer '+(STATE.selectedChatTarget==='ALL'?'bg-purple-600/20 border-purple-500/50':'bg-slate-950 border-slate-800')+'"><b class="text-xs text-white">🌐 Semua Role</b></div>'+(STATE.users||[]).filter(function(u){return String(u.id||u.UserID)!==String(me.id||me.UserID);}).map(function(u){var id=String(u.id||u.UserID);return'<div onclick="selectChatTarget(\''+esc(id)+'\')" class="p-2.5 rounded-xl border cursor-pointer '+(STATE.selectedChatTarget===id?'bg-purple-600/20 border-purple-500/50':'bg-slate-950 border-slate-800')+'"><div class="text-xs font-bold text-slate-200">'+esc(u.name||u.Name||u.email)+'</div><div class="text-[10px] text-slate-500">'+esc(u.role||u.Role||'-')+'</div></div>';}).join('');};
+  window.selectChatTarget=function(id){STATE.selectedChatTarget=id;var el=document.getElementById('chatTargetTitle');if(el)el.textContent=id==='ALL'?'Semua Role':id.indexOf('ROLE:')===0?'Role '+id.substring(5):'Pengguna';renderUsersList();renderChatMessages();};
+  window.renderChatMessages=function(){var c=document.getElementById('chatMessagesContainer');if(!c)return;var me=String((STATE.activeUser||{}).id||''),target=STATE.selectedChatTarget||'ALL',arr=(STATE.chats||[]).filter(function(m){var s=String(m.SenderID||m.senderId||''),r=String(m.ReceiverID||m.receiverId||''),rt=String(m.RoleTarget||m.roleTarget||'').toUpperCase();if(target==='ALL')return rt==='ALL'||r==='ALL'||s===me;if(target.indexOf('ROLE:')===0){var role=target.substring(5);return rt===role||rt==='ROLE:'+role||s===me&&rt===role;}return(s===me&&r===target)||(s===target&&r===me);});c.innerHTML=arr.map(function(m){var mine=String(m.SenderID||m.senderId||'')===me;return'<div class="flex '+(mine?'justify-end':'justify-start')+'"><div class="max-w-[82%] p-2.5 rounded-xl '+(mine?'bg-purple-600 text-white':'bg-slate-800 text-slate-200')+'"><div class="text-[9px] opacity-70">'+esc(m.Pengirim||m.SenderName||'User')+' · '+esc(m.Waktu||m.Time||'')+'</div><div class="text-xs whitespace-pre-wrap">'+esc(m.Pesan||m.Text||'')+'</div></div></div>';}).join('')||'<div class="text-xs text-slate-500 text-center py-8">Belum ada pesan.</div>';c.scrollTop=c.scrollHeight;};
+  window.sendChatMessage=function(e){e.preventDefault();if(chatBusy)return;var input=document.getElementById('inputChatMessage'),text=(input.value||'').trim();if(!text)return;var target=STATE.selectedChatTarget||'ALL',role=target.indexOf('ROLE:')===0?target.substring(5):'';chatBusy=true;input.disabled=true;var b=e.target.querySelector('button[type="submit"]');if(b){b.disabled=true;b.dataset.old=b.textContent;b.textContent='⏳ Mengirim...';}ERPBridge.call('sendInternalChat',{text:text,receiverId:role?'ALL':target,roleTarget:role||(!target?'ALL':target==='ALL'?'ALL':'')},function(r){if(!r||!r.success)throw new Error('Server tidak mengonfirmasi pesan.');STATE.chats=STATE.chats||[];STATE.chats.push(r.chat);input.value='';renderChatMessages();chatBusy=false;input.disabled=false;if(b){b.disabled=false;b.textContent=b.dataset.old||'Kirim';}showToast('Pesan tersimpan ke Chats.','success');},function(er){chatBusy=false;input.disabled=false;if(b){b.disabled=false;b.textContent=b.dataset.old||'Kirim';}showToast((er&&er.message)||'Chat gagal dikirim.','error');});};
+  window.erpForceSync=function(silent){if(syncBusy||!window.ERPBridge)return;syncBusy=true;var b=document.getElementById('erpSyncBtn'),s=document.getElementById('erpSyncStatus');if(b)b.disabled=true;if(s)s.textContent='⏳ Sinkronisasi...';ERPBridge.call('getCashierRealtimeSnapshot',{},function(r){if(r){if(Array.isArray(r.products))STATE.products=r.products;if(Array.isArray(r.history))STATE.history=r.history;if(Array.isArray(r.members))STATE.members=r.members;if(Array.isArray(r.users))STATE.users=r.users;if(r.accounts)STATE.accounts=r.accounts;if(Array.isArray(r.chats))STATE.chats=r.chats;}renderProductGrid();renderProductTable();renderHistoryTable();renderMemberSelect();renderMembersTable();renderUsersList();renderChatMessages();updateAccountDisplay();syncBusy=false;if(b)b.disabled=false;if(s)s.textContent='✓ '+new Date().toLocaleTimeString('id-ID');if(!silent)showToast('Sinkronisasi ERP berhasil.','success');},function(er){syncBusy=false;if(b)b.disabled=false;if(s)s.textContent='⚠ Sync gagal';if(!silent)showToast((er&&er.message)||'Sync gagal.','error');});};
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){erpForceSync(true);},900);setInterval(function(){if(document.visibilityState==='visible')erpForceSync(true);},10000);setInterval(function(){if(document.visibilityState==='visible'&&window.erpChatRefresh)erpChatRefresh();},10000);},{once:true});
+})();
+</script>
+</body>
+</html>

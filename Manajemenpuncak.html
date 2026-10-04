@@ -1,0 +1,2566 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C-Suite Executive Dashboard v4.0 - SAK Compliant Governance & Decision Support System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        .sidebar-scroll::-webkit-scrollbar { width: 3px; }
+        
+        .pulse-red { animation: pulse-r 2s infinite; }
+        @keyframes pulse-r {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+
+
+        .pulse-amber { animation: pulse-a 2s infinite; }
+        @keyframes pulse-a {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+        .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
+        .toast-exit { animation: fadeOut 0.3s ease-in forwards; }
+
+
+        .drawer-transition { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden flex h-screen relative">
+
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+
+    <!-- COMMAND PALETTE / SEARCH MODAL (CTRL + K) -->
+    <div id="search-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-start justify-center pt-20 px-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-magnifying-glass text-indigo-400"></i>
+                <input type="text" id="search-input" onkeyup="filterNavSearch()" placeholder="Cari modul PSAK, P&L, Rekonsiliasi Fiskal, CKPN PSAK 71, instruksi Super Admin... (ESC untuk menutup)" class="bg-transparent w-full text-sm text-white placeholder-slate-500 focus:outline-none">
+                <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded font-mono">ESC</span>
+            </div>
+            <div id="search-results" class="max-h-80 overflow-y-auto p-2 space-y-1 text-xs">
+                <div onclick="switchTab('tab-home'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-house text-indigo-400 mr-2"></i> Executive Dashboard Overview</span>
+                    <span class="text-[10px] text-slate-500 uppercase">Home</span>
+                </div>
+                <div onclick="switchTab('tab-subordinates'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-users-gear text-emerald-400 mr-2"></i> Laporan & Notifikasi Tim Bawahan</span>
+                    <span class="text-[10px] text-slate-500 uppercase">Manajemen Tim</span>
+                </div>
+                <div onclick="switchTab('tab-psak-statements'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-book-bookmark text-indigo-400 mr-2"></i> Laporan Keuangan Standar PSAK / SAK</span>
+                    <span class="text-[10px] text-slate-500 uppercase">PSAK / SAK</span>
+                </div>
+                <div onclick="switchTab('tab-tax-fiscal'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-calculator text-amber-400 mr-2"></i> Perpajakan & Rekonsiliasi Fiskal (PSAK 46)</span>
+                    <span class="text-[10px] text-slate-500 uppercase">Pajak Indonesia</span>
+                </div>
+                <div onclick="switchTab('tab-ecl-psak71'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-chart-line-down text-rose-400 mr-2"></i> CKPN & Expected Credit Loss (PSAK 71)</span>
+                    <span class="text-[10px] text-slate-500 uppercase">PSAK 71</span>
+                </div>
+                <div onclick="switchTab('tab-calk-notes'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-file-lines text-indigo-400 mr-2"></i> Catatan Atas Laporan Keuangan (CALK & Policy)</span>
+                    <span class="text-[10px] text-slate-500 uppercase">CALK</span>
+                </div>
+                <div onclick="switchTab('tab-financial'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-file-invoice-dollar text-indigo-400 mr-2"></i> Ringkasan Laba Rugi & Neraca (P&L / BS)</span>
+                    <span class="text-[10px] text-slate-500 uppercase">Financial</span>
+                </div>
+                <div onclick="switchTab('tab-capex'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-chart-gantt text-indigo-400 mr-2"></i> CapEx & Investment Portfolio</span>
+                    <span class="text-[10px] text-slate-500 uppercase">Investasi</span>
+                </div>
+                <div onclick="switchTab('tab-decision'); closeSearch();" class="p-3 hover:bg-slate-800 rounded-xl cursor-pointer flex justify-between items-center text-slate-200">
+                    <span><i class="fa-solid fa-lightbulb text-amber-400 mr-2"></i> Decision Center & Matrix Keputusan</span>
+                    <span class="text-[10px] text-slate-500 uppercase">Governance</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL DIRECTIVE KE BAWAHAN -->
+    <div id="directive-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl p-5 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane text-emerald-400"></i> Kirim Instruksi Direksi ke Bawahan
+                </h3>
+                <button onclick="closeDirectiveModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1 font-semibold">Tujuan Penerima</label>
+                    <select id="dir-recipient" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="Hendra Wijaya (VP Finance)">Hendra Wijaya - VP Finance</option>
+                        <option value="Ir. Rina Pratama (VP Operations)">Ir. Rina Pratama - VP Operations</option>
+                        <option value="Dimas Anggara (Head of Sales)">Dimas Anggara - Head of Sales</option>
+                        <option value="Seluruh Executive Team">Seluruh Executive Team (Broadcast)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1 font-semibold">Prioritas Instruksi</label>
+                    <select id="dir-priority" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="Sangat Penting / Urgent">Sangat Penting / Urgent</option>
+                        <option value="Normal / Rutin">Normal / Rutin</option>
+                        <option value="Instruksi SAK / Compliance">Instruksi Kepatuhan SAK / Pajak</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1 font-semibold">Isi Instruksi / Catatan Direksi</label>
+                    <textarea id="dir-text" rows="4" placeholder="Tuliskan arahan direksi secara jelas..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeDirectiveModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-xl font-semibold">Batal</button>
+                <button onclick="submitDirective()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-bold shadow-lg">Kirim Instruksi</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- NOTIFICATION CENTER DRAWER (SUPER ADMIN & SUBORDINATES) -->
+    <div id="notif-drawer" class="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-slate-900 border-l border-slate-800 z-50 transform translate-x-full drawer-transition flex flex-col shadow-2xl">
+        <div class="p-4 border-b border-slate-800 bg-slate-950/90 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-white">Pusat Notifikasi & Instruksi</h3>
+                    <p class="text-[9px] text-slate-400">Super Admin & Update Laporan Bawahan</p>
+                </div>
+            </div>
+            <button onclick="toggleNotifDrawer()" class="text-slate-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+        </div>
+
+
+        <!-- Notification Filter Tabs -->
+        <div class="flex border-b border-slate-800 bg-slate-950 text-[11px] p-1.5 gap-1">
+            <button onclick="filterNotifs('all')" id="notif-tab-all" class="notif-tab-btn flex-1 py-1.5 rounded-lg bg-indigo-600 text-white font-bold text-center">Semua (<span id="count-all-notif">5</span>)</button>
+            <button onclick="filterNotifs('superadmin')" id="notif-tab-superadmin" class="notif-tab-btn flex-1 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white font-semibold text-center">Super Admin (<span id="count-sa-notif">2</span>)</button>
+            <button onclick="filterNotifs('subordinate')" id="notif-tab-subordinate" class="notif-tab-btn flex-1 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white font-semibold text-center">Bawahan (<span id="count-sub-notif">3</span>)</button>
+        </div>
+
+
+        <div id="notif-feed-body" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+            
+            <!-- SUPER ADMIN NOTIF 1 -->
+            <div class="notif-item superadmin bg-amber-950/30 border border-amber-500/40 rounded-2xl p-3.5 relative">
+                <div class="flex items-start justify-between gap-2 mb-1.5">
+                    <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-extrabold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                        <i class="fa-solid fa-shield-halved"></i> SUPER ADMIN DIRECTIVE
+                    </span>
+                    <span class="text-[9px] text-slate-400 font-mono">10 Min lalu</span>
+                </div>
+                <h4 class="font-bold text-white text-xs mb-1">Instruksi Pembekuan CapEx Non-Operasional Q4</h4>
+                <p class="text-[11px] text-slate-300 leading-relaxed mb-3">
+                    Dewan Komisaris & Super Admin menginstruksikan penundaan seluruh pengajuan CapEx non-esensial di atas Rp 500 Juta untuk penguatan cadangan kas akhir tahun.
+                </p>
+                <div class="flex gap-2">
+                    <button onclick="showToast('Super Admin Directive', 'Instruksi telah dikonfirmasi dan diterapkan ke sistem budget.', 'success')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] px-3 py-1.5 rounded-lg">Konfirmasi Pembacaan</button>
+                    <button onclick="switchTab('tab-capex'); toggleNotifDrawer();" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] px-3 py-1.5 rounded-lg">Buka CapEx</button>
+                </div>
+            </div>
+
+
+            <!-- SUBORDINATE NOTIF 1 -->
+            <div class="notif-item subordinate bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 relative">
+                <div class="flex items-start justify-between gap-2 mb-1.5">
+                    <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                        <i class="fa-solid fa-user-tie"></i> VP Finance (Bawahan)
+                    </span>
+                    <span class="text-[9px] text-slate-400 font-mono">35 Min lalu</span>
+                </div>
+                <h4 class="font-bold text-white text-xs mb-1">Pengiriman Laporan Audit Piutang Overdue & CKPN PSAK 71</h4>
+                <p class="text-[11px] text-slate-300 leading-relaxed mb-2">
+                    Pak Budi, laporan rekonsiliasi piutang PT Global Sentosa dan perhitugan CKPN PSAK 71 sudah diperbarui. Tim penagihan telah menerbitkan Surat Teguran II.
+                </p>
+                <div class="bg-slate-950 p-2 rounded-xl text-[10px] text-slate-400 border border-slate-800 mb-2">
+                    <i class="fa-solid fa-paperclip text-indigo-400 mr-1"></i> Lampiran: <i>Audit_AR_PSAK71_Final.pdf</i>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="replySubordinate('VP Finance', 'Terima kasih laporan diterima. Teruskan proses hukum jika belum ada kepastian bayar.')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg"><i class="fa-solid fa-reply mr-1"></i> Balas Bawahan</button>
+                    <button onclick="switchTab('tab-ecl-psak71'); toggleNotifDrawer();" class="bg-slate-800 text-slate-300 text-[10px] px-2.5 py-1.5 rounded-lg">Lihat PSAK 71</button>
+                </div>
+            </div>
+
+
+            <!-- SUBORDINATE NOTIF 2 -->
+            <div class="notif-item subordinate bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 relative">
+                <div class="flex items-start justify-between gap-2 mb-1.5">
+                    <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                        <i class="fa-solid fa-user-gear"></i> VP Operations (Bawahan)
+                    </span>
+                    <span class="text-[9px] text-slate-400 font-mono">1 Jam lalu</span>
+                </div>
+                <h4 class="font-bold text-white text-xs mb-1">Permohonan Persetujuan Tambahan Budget Opex Surabaya</h4>
+                <p class="text-[11px] text-slate-300 leading-relaxed mb-3">
+                    Mohon persetujuan pergeseran alokasi dana pemeliharaan mesin produksi cabang Surabaya sebesar Rp 85 Juta.
+                </p>
+                <div class="flex gap-2">
+                    <button onclick="switchTab('tab-approval'); toggleNotifDrawer();" class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg">Review Approval Center</button>
+                </div>
+            </div>
+
+
+            <!-- SUPER ADMIN NOTIF 2 -->
+            <div class="notif-item superadmin bg-indigo-950/30 border border-indigo-500/40 rounded-2xl p-3.5 relative">
+                <div class="flex items-start justify-between gap-2 mb-1.5">
+                    <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] font-extrabold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                        <i class="fa-solid fa-shield-halved"></i> SUPER ADMIN ANNOUNCEMENT
+                    </span>
+                    <span class="text-[9px] text-slate-400 font-mono">2 Jam lalu</span>
+                </div>
+                <h4 class="font-bold text-white text-xs mb-1">Jadwal Boardroom Audit Konsolidasi SAK & Pajak Q3</h4>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                    Agenda Paparan Direksi dengan Super Admin & Pemegang Saham dijadwalkan pada hari Jumat, 18 September 2026. Mohon siapkan presentasi executive laporan SAK & Rekonsiliasi Fiskal.
+                </p>
+            </div>
+
+
+            <!-- SUBORDINATE NOTIF 3 -->
+            <div class="notif-item subordinate bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 relative">
+                <div class="flex items-start justify-between gap-2 mb-1.5">
+                    <span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[9px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                        <i class="fa-solid fa-chart-line"></i> Head of Sales (Bawahan)
+                    </span>
+                    <span class="text-[9px] text-slate-400 font-mono">3 Jam lalu</span>
+                </div>
+                <h4 class="font-bold text-white text-xs mb-1">Laporan Pencapaian Target Penjualan Wilayah Barat</h4>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                    Target bulan Agustus berhasil dilampaui sebesar +4.2% didorong kontribusi kontrak baru dari PT Express Logistics sesuai kriteria pengakuan PSAK 72.
+                </p>
+            </div>
+
+
+        </div>
+
+
+        <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-between items-center text-xs">
+            <button onclick="clearAllNotifs()" class="text-slate-400 hover:text-white text-[11px]"><i class="fa-solid fa-check-double mr-1"></i> Tandai Semua Dibaca</button>
+            <button onclick="switchTab('tab-subordinates'); toggleNotifDrawer();" class="text-indigo-400 hover:text-indigo-300 text-[11px] font-bold">Pusat Laporan Tim <i class="fa-solid fa-arrow-right ml-1"></i></button>
+        </div>
+    </div>
+
+
+    <!-- AI COPILOT ASSISTANT DRAWER -->
+    <div id="ai-drawer" class="fixed inset-y-0 right-0 w-full sm:w-96 bg-slate-900 border-l border-slate-800 z-50 transform translate-x-full drawer-transition flex flex-col shadow-2xl">
+        <div class="p-4 border-b border-slate-800 bg-slate-950/80 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-white">C-Suite AI Copilot</h3>
+                    <p class="text-[9px] text-indigo-400">Assistant SAK & Keputusan Strategis</p>
+                </div>
+            </div>
+            <button onclick="toggleAiDrawer()" class="text-slate-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+        </div>
+        <div id="ai-chat-body" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 text-slate-200 leading-relaxed">
+                Halo Pak Budi. Saya siap membantu menganalisis standar keuangan SAK / PSAK (PSAK 1, 16, 46, 71, 72, 73), kewajiban perpajakan Indonesia, arahan Super Admin, atau laporan tim bawahan Anda.
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="askAiPrompt('Analisis SAK & PSAK 71')" class="bg-indigo-950 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-300 text-[10px] px-2.5 py-1.5 rounded-xl text-left">
+                    <i class="fa-solid fa-book-bookmark mr-1"></i> Kepatuhan SAK & PSAK 71
+                </button>
+                <button onclick="askAiPrompt('Rekonsiliasi Fiskal & Pajak Tangguhan')" class="bg-indigo-950 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-300 text-[10px] px-2.5 py-1.5 rounded-xl text-left">
+                    <i class="fa-solid fa-calculator mr-1"></i> Pajak Tangguhan PSAK 46
+                </button>
+                <button onclick="askAiPrompt('Analisis Likuiditas & Kas')" class="bg-indigo-950 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-300 text-[10px] px-2.5 py-1.5 rounded-xl text-left">
+                    <i class="fa-solid fa-bolt mr-1"></i> Analisis Likuiditas
+                </button>
+                <button onclick="askAiPrompt('Ringkasan Laporan Bawahan')" class="bg-indigo-950 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-300 text-[10px] px-2.5 py-1.5 rounded-xl text-left">
+                    <i class="fa-solid fa-users mr-1"></i> Ringkasan Tim Bawahan
+                </button>
+            </div>
+        </div>
+        <div class="p-3 border-t border-slate-800 bg-slate-950 flex gap-2">
+            <input type="text" id="ai-chat-input" placeholder="Tanyakan isu SAK, Pajak, atau Keputusan..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <button onclick="sendAiMessage()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 rounded-xl"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+        </div>
+    </div>
+
+
+    <!-- SIDEBAR -->
+    <aside id="main-sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-20 flex-shrink-0 hidden md:flex transition-all duration-300">
+        <div class="p-5 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                    <i class="fa-solid fa-chess-knight text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-extrabold text-white tracking-tight leading-tight">C-SUITE ENGINE</h1>
+                    <p class="text-[9px] text-indigo-400 font-bold uppercase tracking-widest">Executive SAK v4.0</p>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="flex-1 overflow-y-auto py-4 px-3 space-y-4 sidebar-scroll">
+            
+            <!-- HOME -->
+            <div>
+                <button onclick="switchTab('tab-home')" id="btn-tab-home" class="tab-btn active w-full text-left bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-house w-4 text-center"></i> Executive Dashboard
+                </button>
+            </div>
+
+
+            <!-- STANDAR AKUNTANSI KEUANGAN (SAK / PSAK INDONESIA) - NEW SECTION -->
+            <div>
+                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5 px-3 flex items-center justify-between">
+                    <span>Standar SAK / PSAK</span>
+                    <span class="bg-indigo-500/20 text-indigo-300 text-[8px] px-1.5 py-0.5 rounded font-extrabold">ID SAK</span>
+                </div>
+                <button onclick="switchTab('tab-psak-statements')" id="btn-tab-psak-statements" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-book-bookmark w-4 text-center text-indigo-400"></i> Laporan SAK / PSAK
+                </button>
+                <button onclick="switchTab('tab-tax-fiscal')" id="btn-tab-tax-fiscal" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-calculator w-4 text-center text-amber-400"></i> Pajak & Rekonsiliasi
+                </button>
+                <button onclick="switchTab('tab-ecl-psak71')" id="btn-tab-ecl-psak71" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-chart-line-down w-4 text-center text-rose-400"></i> CKPN (PSAK 71 ECL)
+                </button>
+                <button onclick="switchTab('tab-calk-notes')" id="btn-tab-calk-notes" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-file-lines w-4 text-center text-blue-400"></i> CALK & Policy
+                </button>
+            </div>
+
+
+            <!-- TEAM & SUBORDINATES -->
+            <div>
+                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5 px-3">Team & Subordinates</div>
+                <button onclick="switchTab('tab-subordinates')" id="btn-tab-subordinates" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all relative">
+                    <i class="fa-solid fa-users-gear w-4 text-center text-emerald-400"></i> Laporan & Tim Bawahan
+                    <span id="badge-sub-sidebar" class="absolute right-3 bg-emerald-500 text-slate-950 text-[9px] px-1.5 rounded-full font-bold">3</span>
+                </button>
+            </div>
+
+
+            <!-- FINANCIAL OVERVIEW -->
+            <div>
+                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5 px-3">Financial Overview</div>
+                <button onclick="switchTab('tab-financial')" id="btn-tab-financial" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-file-invoice-dollar w-4 text-center"></i> Profit & Loss / BS
+                </button>
+                <button onclick="switchTab('tab-ratios')" id="btn-tab-ratios" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-chart-pie w-4 text-center"></i> Financial Ratios
+                </button>
+            </div>
+
+
+            <!-- CASH & PERFORMANCE -->
+            <div>
+                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5 px-3">Cash & Performance</div>
+                <button onclick="switchTab('tab-cash')" id="btn-tab-cash" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-money-bill-wave w-4 text-center"></i> Cash Management
+                </button>
+                <button onclick="switchTab('tab-aging')" id="btn-tab-aging" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-hand-holding-dollar w-4 text-center"></i> AR & AP Aging
+                </button>
+            </div>
+
+
+            <!-- STRATEGY & INVESTMENTS -->
+            <div>
+                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5 px-3">Strategy & Growth</div>
+                <button onclick="switchTab('tab-capex')" id="btn-tab-capex" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-chart-gantt w-4 text-center"></i> CapEx & Investments
+                </button>
+                <button onclick="switchTab('tab-scorecard')" id="btn-tab-scorecard" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-bullseye w-4 text-center"></i> Balanced Scorecard
+                </button>
+            </div>
+
+
+            <!-- INTELLIGENCE & RISK -->
+            <div>
+                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5 px-3">Intelligence & Risk</div>
+                <button onclick="switchTab('tab-forecast')" id="btn-tab-forecast" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-compass-drafting w-4 text-center"></i> Forecast & Scenario
+                </button>
+                <button onclick="switchTab('tab-anomaly')" id="btn-tab-anomaly" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all relative">
+                    <i class="fa-solid fa-shield-virus w-4 text-center"></i> Risk & Anomaly
+                    <span class="absolute right-2 top-2 w-2 h-2 rounded-full bg-rose-500 pulse-red"></span>
+                </button>
+                <button onclick="switchTab('tab-esg')" id="btn-tab-esg" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-leaf w-4 text-center"></i> ESG & FX Risk
+                </button>
+            </div>
+
+
+            <!-- EXECUTIVE INTELLIGENCE -->
+            <div>
+                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5 px-3">Executive Intelligence</div>
+                <button onclick="switchTab('tab-executive-intelligence')" id="btn-tab-executive-intelligence" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all relative">
+                    <i class="fa-solid fa-brain w-4 text-center text-fuchsia-400"></i> Executive Intelligence
+                    <span id="badge-exec-redflags" class="absolute right-3 bg-rose-500 text-white text-[9px] px-1.5 rounded-full font-bold hidden">0</span>
+                </button>
+            </div>
+
+            <!-- GOVERNANCE & DECISION -->
+            <div>
+                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1.5 px-3">Governance & Decision</div>
+                <button onclick="switchTab('tab-approval')" id="btn-tab-approval" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all relative">
+                    <i class="fa-solid fa-check-double w-4 text-center"></i> Approval Center
+                    <span id="badge-approval" class="absolute right-3 bg-amber-500 text-slate-900 text-[9px] px-1.5 rounded-full font-bold">2</span>
+                </button>
+                <button onclick="switchTab('tab-decision')" id="btn-tab-decision" class="tab-btn w-full text-left bg-transparent hover:bg-slate-800 border border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-3 transition-all">
+                    <i class="fa-solid fa-lightbulb w-4 text-center text-amber-400"></i> Decision Center
+                </button>
+            </div>
+
+
+        </div>
+        
+        <div class="p-4 border-t border-slate-800 bg-slate-950/50">
+            <div class="flex items-center gap-3">
+                <img src="https://ui-avatars.com/api/?name=CEO&background=4f46e5&color=fff" class="w-8 h-8 rounded-full" alt="CEO Avatar">
+                <div class="text-xs">
+                    <div class="font-bold text-white">Budi Raharjo</div>
+                    <div class="text-[10px] text-slate-500">Chief Executive Officer</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative" id="print-area">
+        
+        <!-- HEADER -->
+        <header class="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 py-3">
+            <div class="flex justify-between items-center gap-2 md:gap-4">
+                <div class="flex items-center gap-2 md:gap-4">
+                    <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-white p-2 rounded-lg border border-slate-800">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <select class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-2 md:px-3 py-1.5 text-slate-200 focus:ring-1 focus:ring-indigo-500 font-semibold shadow-sm w-28 md:w-auto">
+                        <option>KONSOLIDASI GRUP (SAK)</option>
+                        <option>PT Tech Solutions Indonesia</option>
+                        <option>PT Express Logistics Corp</option>
+                    </select>
+                    <select class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-2 md:px-3 py-1.5 text-slate-200 focus:ring-1 focus:ring-indigo-500 font-semibold shadow-sm">
+                        <option>Agustus 2026 (Audit Pre-Close)</option>
+                        <option>Juli 2026</option>
+                    </select>
+                </div>
+                
+                <div class="flex gap-2 items-center">
+                    <!-- SEARCH BUTTON -->
+                    <button onclick="openSearch()" class="hidden sm:flex items-center gap-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white px-3 py-1.5 rounded-lg text-xs">
+                        <i class="fa-solid fa-magnifying-glass text-indigo-400"></i>
+                        <span>Cari...</span>
+                        <span class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-500">Ctrl K</span>
+                    </button>
+
+
+                    <!-- AI COPILOT BUTTON -->
+                    <button onclick="toggleAiDrawer()" class="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs px-2.5 md:px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all">
+                        <i class="fa-solid fa-robot text-indigo-400"></i> <span class="hidden md:inline">AI Copilot</span>
+                    </button>
+
+
+                    <!-- BOARDROOM PRESENTATION MODE TOGGLE -->
+                    <button onclick="toggleBoardroomMode()" id="btn-boardroom" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs px-2.5 md:px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all">
+                        <i class="fa-solid fa-display text-indigo-400"></i> <span class="hidden lg:inline">Boardroom Mode</span>
+                    </button>
+
+
+                    <div id="gas-status" class="hidden xl:flex items-center gap-2 text-[10px] px-2.5 py-1.5 rounded bg-slate-900 text-emerald-400 border border-slate-800">
+                        <i class="fa-solid fa-circle text-[8px] text-emerald-500"></i> SAK Engine Ready
+                    </div>
+
+
+                    <!-- COMBINED NOTIFICATION BUTTON (SUPER ADMIN & BAWAHAN) -->
+                    <button onclick="toggleNotifDrawer()" class="relative text-slate-400 hover:text-white p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <i class="fa-solid fa-bell text-indigo-400"></i>
+                        <span id="badge-total-notif" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center pulse-red">5</span>
+                    </button>
+
+
+                    <button onclick="exportPDF()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 md:px-4 py-1.5 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all">
+                        <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Ekspor PDF</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+
+        <!-- SUPER ADMIN DIRECTIVE TICKER / BROADCAST BANNER -->
+        <div id="superadmin-banner" class="bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2.5 overflow-hidden">
+                <span class="bg-amber-500 text-slate-950 text-[9px] font-extrabold px-2 py-0.5 rounded flex items-center gap-1 flex-shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation"></i> SUPER ADMIN DIRECTIVE
+                </span>
+                <span class="text-amber-200/90 text-[11px] truncate font-medium">
+                    "Instruksi Terbaru: Seluruh Pengajuan CapEx Non-Operasional > Rp 500 Juta ditangguhkan hingga Audit Konsolidasi SAK & Pajak Q3 Selesai."
+                </span>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <button onclick="toggleNotifDrawer(); filterNotifs('superadmin');" class="text-[10px] text-amber-300 underline font-bold hover:text-white">Detail Directive</button>
+                <button onclick="dismissBanner()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+        </div>
+
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-950">
+            <div class="max-w-7xl mx-auto space-y-6 pb-20">
+
+
+                <!-- TAB 1: EXECUTIVE DASHBOARD (HOME) -->
+                <div id="tab-home" class="tab-content space-y-6 block">
+                    
+                    <!-- Top AI Summary -->
+                    <div class="bg-gradient-to-r from-slate-900 via-indigo-900/20 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                        <div class="absolute -right-10 -top-10 text-indigo-500/5 text-9xl pointer-events-none">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <div class="flex flex-col md:flex-row items-start gap-4 relative z-10">
+                            <div class="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 flex-shrink-0">
+                                <i class="fa-solid fa-robot text-indigo-400 text-xl"></i>
+                            </div>
+                            <div class="flex-1 w-full">
+                                <h2 class="text-sm font-bold text-white mb-2 flex flex-wrap items-center gap-2">
+                                    Executive Financial Summary & SAK Compliance – <span id="summary-month">Agustus 2026</span>
+                                    <span class="text-[9px] bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded uppercase font-bold">Auto-Generated AI & SAK Engine</span>
+                                </h2>
+                                <p id="ai-summary-text" class="text-xs text-slate-300 leading-relaxed mb-3">
+                                    Kinerja keuangan YTD Agustus 2026 tumbuh solid sebesar <b>+12.4% YoY</b>. Laba bersih komprehensif mencapai <b>Rp 480.000.000</b>. Kepatuhan SAK berada pada kondisi prima dengan penerapan penuh pengakuan pendapatan PSAK 72, liabilitas sewa PSAK 73, dan pencatatan CKPN berbasis model Expected Credit Loss PSAK 71.
+                                </p>
+                                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                                    <div class="text-[10px] text-slate-400 font-bold uppercase mb-2 flex justify-between">
+                                        <span>Poin Kunci Membutuhkan Perhatian Direksi:</span>
+                                    </div>
+                                    <ul id="ai-attention-list" class="text-xs space-y-1.5 text-slate-300">
+                                        <li class="flex items-center gap-2"><i class="fa-solid fa-circle-exclamation text-rose-400"></i> Piutang Overdue > 90 Hari sebesar Rp 500 Juta memerlukan tindakan hukum & tambahan CKPN PSAK 71 Rp 80 Juta.</li>
+                                        <li class="flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Biaya operasional cabang Surabaya overbudget +10% akibat perbaikan fasilitas gudang.</li>
+                                        <li class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-indigo-400"></i> Penundaan CapEx > Rp 500 Juta sesuai arahan Super Admin untuk konsolidasi kas Q3.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- SUBORDINATE & SUPER ADMIN QUICK ACTIVITY FEED -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Super Admin Directives Box -->
+                        <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-xs font-bold text-amber-400 flex items-center gap-2">
+                                    <i class="fa-solid fa-shield-halved"></i> Instruksi Super Admin Terakhir
+                                </h3>
+                                <span class="text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold uppercase">Kebijakan Global</span>
+                            </div>
+                            <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                                "Audit konsolidasi SAK & Pajak Q3 dijadwalkan 18 Sept. Seluruh penambahan budget cabang harus melalui verifikasi C-Suite."
+                            </p>
+                            <div class="flex justify-between items-center text-[10px]">
+                                <span class="text-slate-500">Oleh: Dewan Super Admin</span>
+                                <button onclick="toggleNotifDrawer(); filterNotifs('superadmin');" class="text-amber-400 font-bold hover:underline">Lihat Semua Kebijakan &rarr;</button>
+                            </div>
+                        </div>
+
+
+                        <!-- Subordinate Reports Activity Box -->
+                        <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-4 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-xs font-bold text-emerald-400 flex items-center gap-2">
+                                    <i class="fa-solid fa-users-gear"></i> Update Terakhir dari Bawahan / Tim
+                                </h3>
+                                <span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold uppercase">3 Laporan Masuk</span>
+                            </div>
+                            <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                                VP Finance menyerahkan Laporan Audit AR Overdue & CKPN PSAK 71. VP Sales melaporkan surplus penjualan Wilayah Barat (+4.2%).
+                            </p>
+                            <div class="flex justify-between items-center text-[10px]">
+                                <span class="text-slate-500">Terakhir: 35 menit lalu</span>
+                                <button onclick="switchTab('tab-subordinates')" class="text-emerald-400 font-bold hover:underline">Buka Pusat Tim Bawahan &rarr;</button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Financial Health Indicators -->
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Indikator Kesehatan Perusahaan & Compliance SAK</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <div class="bg-slate-900 border border-emerald-500/30 rounded-xl p-3 flex flex-col items-center justify-center gap-1">
+                            <i class="fa-solid fa-circle text-emerald-500 text-xs"></i>
+                            <span class="text-xs font-bold text-white">Likuiditas</span>
+                            <span class="text-[10px] text-emerald-400">Sehat (2.5x)</span>
+                        </div>
+                        <div class="bg-slate-900 border border-emerald-500/30 rounded-xl p-3 flex flex-col items-center justify-center gap-1">
+                            <i class="fa-solid fa-circle text-emerald-500 text-xs"></i>
+                            <span class="text-xs font-bold text-white">Profitabilitas</span>
+                            <span class="text-[10px] text-emerald-400">Sesuai Target (19.5%)</span>
+                        </div>
+                        <div class="bg-slate-900 border border-indigo-500/30 rounded-xl p-3 flex flex-col items-center justify-center gap-1 bg-indigo-500/5 cursor-pointer" onclick="switchTab('tab-psak-statements')">
+                            <i class="fa-solid fa-circle text-indigo-400 text-xs"></i>
+                            <span class="text-xs font-bold text-white">SAK / PSAK Compliance</span>
+                            <span class="text-[10px] text-indigo-400">Audit Ready (100%)</span>
+                        </div>
+                        <div class="bg-slate-900 border border-rose-500/30 rounded-xl p-3 flex flex-col items-center justify-center gap-1 bg-rose-500/5 pulse-red cursor-pointer hover:bg-rose-500/10 transition-colors" onclick="switchTab('tab-ecl-psak71')">
+                            <i class="fa-solid fa-circle text-rose-500 text-xs"></i>
+                            <span class="text-xs font-bold text-white">Piutang & CKPN</span>
+                            <span class="text-[10px] text-rose-400">Kritis (PSAK 71)</span>
+                        </div>
+                        <div class="bg-slate-900 border border-amber-500/30 rounded-xl p-3 flex flex-col items-center justify-center gap-1 bg-amber-500/5 cursor-pointer" onclick="switchTab('tab-tax-fiscal')">
+                            <i class="fa-solid fa-circle text-amber-500 text-xs"></i>
+                            <span class="text-xs font-bold text-white">Pajak Tangguhan</span>
+                            <span class="text-[10px] text-amber-400">PSAK 46 Active</span>
+                        </div>
+                    </div>
+
+
+                    <!-- Main KPIs -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg group hover:border-slate-700 transition-colors">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Pendapatan (PSAK 72)</div>
+                            <div id="kpi-revenue" class="text-xl md:text-2xl font-black text-white">Rp 2.450.000.000</div>
+                            <div id="kpi-revenue-trend" class="text-[10px] text-emerald-400 mt-1 flex justify-between">
+                                <span><i class="fa-solid fa-arrow-up mr-1"></i> +12.4% vs Bulan Lalu</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg group hover:border-emerald-500/30 transition-colors">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Laba Bersih Tahun Berjalan</div>
+                            <div id="kpi-net-income" class="text-xl md:text-2xl font-black text-emerald-400">Rp 480.000.000</div>
+                            <div id="kpi-net-income-trend" class="text-[10px] text-emerald-400 mt-1 flex justify-between">
+                                <span><i class="fa-solid fa-arrow-up mr-1"></i> NPM 19.5%</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg group hover:border-blue-500/30 transition-colors">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Saldo Kas & Setara Kas (PSAK 2)</div>
+                            <div id="kpi-cash" class="text-xl md:text-2xl font-black text-blue-400">Rp 1.250.000.000</div>
+                            <div id="kpi-cash-trend" class="text-[10px] text-slate-400 mt-1 flex justify-between">
+                                <span>Rasio Kas Sesuai Batas Aman</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900 border border-rose-900/20 border-rose-500/30 rounded-2xl p-4 shadow-lg relative overflow-hidden group hover:border-rose-500/60 transition-colors cursor-pointer" onclick="switchTab('tab-ecl-psak71')">
+                            <div class="text-[10px] text-rose-300 uppercase font-bold mb-1">Piutang Overdue & CKPN</div>
+                            <div id="kpi-overdue" class="text-xl md:text-2xl font-black text-rose-500">Rp 1.300.000.000</div>
+                            <div id="kpi-overdue-detail" class="text-[10px] text-rose-400 mt-1">
+                                CKPN Terbentuk: Rp 215.000.000
+                            </div>
+                            <i class="fa-solid fa-file-invoice-dollar absolute -right-2 -bottom-2 text-5xl text-rose-500/10 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                    </div>
+
+
+                    <!-- Interactive Revenue/Cashflow Chart -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg w-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-chart-line text-indigo-400 mr-2"></i> Trend Kinerja Keuangan SAK (YTD)</h3>
+                        </div>
+                        <div class="h-64 w-full">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+
+
+                    <!-- Cash Forecast & Budget mini-view -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Cash Flow Forecast -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <h3 class="text-sm font-bold text-white mb-4 flex justify-between">
+                                <span><i class="fa-solid fa-money-bill-transfer text-blue-400 mr-2"></i> Cash Flow Forecast (30 Hari - PSAK 2)</span>
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-2">
+                                    <span class="text-slate-400">Saldo Kas & Setara Kas Saat Ini</span>
+                                    <span class="font-bold text-white">Rp 1.250.000.000</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-2">
+                                    <span class="text-slate-400">Estimasi Penerimaan Kas Operasi</span>
+                                    <span class="font-bold text-emerald-400">+ Rp 450.000.000</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-2">
+                                    <span class="text-slate-400">Estimasi Pengeluaran Kas (AP & Opex)</span>
+                                    <span class="font-bold text-rose-400">- Rp 650.000.000</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm pt-2">
+                                    <span class="font-bold text-slate-300">Proyeksi Saldo (Hari ke-30)</span>
+                                    <span class="font-black text-blue-400">Rp 1.050.000.000</span>
+                                </div>
+                                <div class="mt-4 bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg flex gap-3 items-start">
+                                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5"></i>
+                                    <div>
+                                        <div class="text-[10px] font-bold text-amber-400 uppercase">Peringatan Tekanan Kas SAK</div>
+                                        <div class="text-xs text-slate-300">Dalam 45 hari, saldo diproyeksikan mendekati batas minimum operasional (Rp 800 Juta). Disarankan menunda capex non-esensial sesuai arahan Super Admin.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Budget vs Actual -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <h3 class="text-sm font-bold text-white mb-4 flex justify-between">
+                                <span><i class="fa-solid fa-bullseye text-indigo-400 mr-2"></i> Budget vs Actual (Bulan Ini)</span>
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-300">Operasional</span>
+                                        <span class="text-amber-400 font-bold">550 jt / 500 jt (+10%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-1.5">
+                                        <div class="bg-amber-500 h-1.5 rounded-full" style="width: 100%"></div>
+                                    </div>
+                                    <div class="text-[9px] mt-1 flex items-center gap-1 text-amber-500"><i class="fa-solid fa-circle text-[6px]"></i> Melebihi Batas Wajar - Minta Approval</div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-300">Marketing</span>
+                                        <span class="text-emerald-400 font-bold">180 jt / 200 jt (-10%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-1.5">
+                                        <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 90%"></div>
+                                    </div>
+                                    <div class="text-[9px] mt-1 flex items-center gap-1 text-emerald-500"><i class="fa-solid fa-circle text-[6px]"></i> Sesuai (Efisien)</div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-300">Gaji & Tunjangan Imbalan Kerja (PSAK 24)</span>
+                                        <span class="text-slate-400 font-bold">1 M / 1 M (0%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-1.5">
+                                        <div class="bg-blue-500 h-1.5 rounded-full" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- NEW TAB: MODUL LAPORAN KEUANGAN PSAK / SAK INDONESIA -->
+                <div id="tab-psak-statements" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-book-bookmark text-indigo-400"></i> Laporan Keuangan Standar PSAK / SAK Indonesia
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">Disusun sesuai Standar Akuntansi Keuangan (PSAK 1, PSAK 2, PSAK 24) Konsolidasi Grup.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="showToast('Ekspor SAK', 'Menyiapkan Laporan Keuangan Format PSAK/SAK PDF...', 'success')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded-lg text-white font-bold"><i class="fa-solid fa-file-pdf mr-1"></i> Cetak Laporan SAK</button>
+                        </div>
+                    </div>
+
+
+                    <!-- Filter Sub-Laporan PSAK -->
+                    <div class="flex border-b border-slate-800 gap-2 pb-2 text-xs">
+                        <button onclick="showPsakSubtab('psak-pl')" id="btn-sub-psak-pl" class="psak-sub-btn bg-indigo-600 text-white font-bold px-3 py-1.5 rounded-lg">Laba Rugi & OCI (PSAK 1)</button>
+                        <button onclick="showPsakSubtab('psak-bs')" id="btn-sub-psak-bs" class="psak-sub-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg">Posisi Keuangan / Neraca</button>
+                        <button onclick="showPsakSubtab('psak-cf')" id="btn-sub-psak-cf" class="psak-sub-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg">Arus Kas (PSAK 2)</button>
+                        <button onclick="showPsakSubtab('psak-eq')" id="btn-sub-psak-eq" class="psak-sub-btn bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg">Perubahan Ekuitas</button>
+                    </div>
+
+
+                    <!-- SUB 1: LABA RUGI DAN OCI -->
+                    <div id="psak-pl" class="psak-sub-content block space-y-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">Laporan Laba Rugi dan Penghasilan Komprehensif Lain</h3>
+                                    <div class="text-[10px] text-slate-400">Untuk Periode Berakhir 31 Agustus 2026 (Disajikan dalam Rupiah)</div>
+                                </div>
+                                <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-2.5 py-1 rounded-full font-bold">Terverifikasi Audit</span>
+                            </div>
+
+
+                            <div class="space-y-2 text-xs font-mono">
+                                <div class="flex justify-between font-bold text-white border-b border-slate-800/60 pb-1"><span>PENDAPATAN USAHA (PSAK 72)</span> <span>Rp 2.450.000.000</span></div>
+                                <div class="flex justify-between text-slate-400 pl-4"><span>Beban Pokok Pendapatan (HPP)</span> <span>(Rp 1.150.000.000)</span></div>
+                                <div class="flex justify-between font-bold text-emerald-400 border-t border-slate-800 pt-1"><span>LABA KOTOR</span> <span>Rp 1.300.000.000</span></div>
+                                
+                                <div class="flex justify-between font-semibold text-slate-300 pt-2"><span>Beban Operasional:</span> <span></span></div>
+                                <div class="flex justify-between text-slate-400 pl-4"><span>Beban Penjualan & Pemasaran</span> <span>(Rp 180.000.000)</span></div>
+                                <div class="flex justify-between text-slate-400 pl-4"><span>Beban Umum & Administrasi</span> <span>(Rp 370.000.000)</span></div>
+                                <div class="flex justify-between text-slate-400 pl-4"><span>Beban Kerugian Penurunan Nilai Piutang (PSAK 71)</span> <span>(Rp 35.000.000)</span></div>
+                                <div class="flex justify-between text-slate-400 pl-4"><span>Penyusutan Aset Tetap & Hak-Guna (PSAK 16 & 73)</span> <span>(Rp 145.000.000)</span></div>
+                                
+                                <div class="flex justify-between font-bold text-indigo-400 border-t border-slate-800 pt-1"><span>LABA USAHA (EBIT)</span> <span>Rp 570.000.000</span></div>
+                                
+                                <div class="flex justify-between text-slate-400 pl-4 pt-1"><span>Beban Keuangan / Bunga Bank & Sewa</span> <span>(Rp 40.000.000)</span></div>
+                                <div class="flex justify-between text-slate-400 pl-4"><span>Pendapatan Lain-lain / Selisih Kurs Neto</span> <span>Rp 15.000.000</span></div>
+                                
+                                <div class="flex justify-between font-bold text-white border-t border-slate-800 pt-1"><span>LABA SEBELUM PAJAK PENGHASILAN</span> <span>Rp 545.000.000</span></div>
+                                <div class="flex justify-between text-slate-400 pl-4"><span>Beban Pajak Penghasilan Badan (PSAK 46)</span> <span>(Rp 65.000.000)</span></div>
+                                
+                                <div class="flex justify-between font-black text-emerald-400 border-t-2 border-slate-700 pt-2 text-sm"><span>LABA BERSIH TAHUN BERJALAN</span> <span>Rp 480.000.000</span></div>
+                                
+                                <!-- OCI SECTION -->
+                                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 mt-3 space-y-1">
+                                    <div class="font-bold text-purple-300 text-[11px]">PENGHASILAN KOMPREHENSIF LAIN (OCI):</div>
+                                    <div class="flex justify-between text-slate-400 text-[11px]"><span>Keuntungan Revaluasi Aset Tetap (PSAK 16) - Neto Pajak</span> <span>Rp 45.000.000</span></div>
+                                    <div class="flex justify-between text-slate-400 text-[11px]"><span>Pengukuran Kembali Imbalan Kerja Manfaat Pasti (PSAK 24)</span> <span>(Rp 10.000.000)</span></div>
+                                    <div class="flex justify-between font-bold text-purple-400 border-t border-slate-800 pt-1"><span>TOTAL LABA KOMPREHENSIF TAHUN BERJALAN</span> <span>Rp 515.000.000</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- SUB 2: POSISI KEUANGAN / NERACA -->
+                    <div id="psak-bs" class="psak-sub-content hidden space-y-4">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- ASET -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+                                <h3 class="text-sm font-bold text-blue-400 border-b border-slate-800 pb-2 flex justify-between">
+                                    <span>ASET</span> <span>31 Ags 2026</span>
+                                </h3>
+                                <div class="space-y-2 text-xs font-mono">
+                                    <div class="font-bold text-white">ASET LANCAR:</div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Kas dan Setara Kas (PSAK 2)</span> <span>Rp 1.250.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Piutang Usaha (Neto CKPN PSAK 71)</span> <span>Rp 2.185.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Persediaan Neto (PSAK 14)</span> <span>Rp 1.100.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Pajak Dibayar Di muka & Biaya Dibayar Di muka</span> <span>Rp 215.000.000</span></div>
+                                    <div class="flex justify-between font-bold text-blue-300 border-t border-slate-800 pt-1"><span>Total Aset Lancar</span> <span>Rp 4.750.000.000</span></div>
+
+
+                                    <div class="font-bold text-white pt-2">ASET TIDAK LANCAR:</div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Aset Tetap (Neto Akumulasi Depresiasi PSAK 16)</span> <span>Rp 1.850.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Aset Hak-Guna Sewa (PSAK 73)</span> <span>Rp 420.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Aset Pajak Tangguhan (PSAK 46)</span> <span>Rp 130.000.000</span></div>
+                                    <div class="flex justify-between font-bold text-blue-300 border-t border-slate-800 pt-1"><span>Total Aset Tidak Lancar</span> <span>Rp 2.400.000.000</span></div>
+
+
+                                    <div class="flex justify-between font-black text-blue-400 border-t-2 border-slate-700 pt-2 text-sm"><span>TOTAL ASET</span> <span>Rp 7.150.000.000</span></div>
+                                </div>
+                            </div>
+
+
+                            <!-- LIABILITAS DAN EKUITAS -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+                                <h3 class="text-sm font-bold text-rose-400 border-b border-slate-800 pb-2 flex justify-between">
+                                    <span>LIABILITAS & EKUITAS</span> <span>31 Ags 2026</span>
+                                </h3>
+                                <div class="space-y-2 text-xs font-mono">
+                                    <div class="font-bold text-white">LIABILITAS JANGKA PENDEK:</div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Utang Usaha</span> <span>Rp 450.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Utang Pajak (PPh 21, 23, 25/29, PPN)</span> <span>Rp 120.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Beban Akrual & Utang Gaji</span> <span>Rp 180.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Liabilitas Sewa Jangka Pendek (PSAK 73)</span> <span>Rp 100.000.000</span></div>
+                                    <div class="flex justify-between font-bold text-rose-300 border-t border-slate-800 pt-1"><span>Total Liabilitas Jangka Pendek</span> <span>Rp 850.000.000</span></div>
+
+
+                                    <div class="font-bold text-white pt-2">LIABILITAS JANGKA PANJANG:</div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Utang Bank Jangka Panjang</span> <span>Rp 400.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Liabilitas Sewa Jangka Panjang (PSAK 73)</span> <span>Rp 280.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Liabilitas Imbalan Kerja (PSAK 24)</span> <span>Rp 120.000.000</span></div>
+                                    <div class="flex justify-between font-bold text-rose-300 border-t border-slate-800 pt-1"><span>Total Liabilitas Jangka Panjang</span> <span>Rp 800.000.000</span></div>
+
+
+                                    <div class="font-bold text-white pt-2">EKUITAS:</div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Modal Saham Disetor</span> <span>Rp 3.500.000.000</span></div>
+                                    <div class="flex justify-between text-slate-300 pl-3"><span>Saldo Laba (Retained Earnings)</span> <span>Rp 2.000.000.000</span></div>
+                                    <div class="flex justify-between font-bold text-emerald-400 border-t border-slate-800 pt-1"><span>Total Ekuitas</span> <span>Rp 5.500.000.000</span></div>
+
+
+                                    <div class="flex justify-between font-black text-rose-400 border-t-2 border-slate-700 pt-2 text-sm"><span>TOTAL LIABILITAS & EKUITAS</span> <span>Rp 7.150.000.000</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- SUB 3: ARUS KAS (PSAK 2) -->
+                    <div id="psak-cf" class="psak-sub-content hidden space-y-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+                            <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-2 flex justify-between">
+                                <span>Laporan Arus Kas (Metode Langsung - PSAK 2)</span>
+                                <span class="text-xs font-mono text-emerald-400">Net Cash Flow: +Rp 180.000.000</span>
+                            </h3>
+                            <div class="space-y-2 text-xs font-mono">
+                                <div class="font-bold text-emerald-400">1. ARUS KAS DARI AKTIVITAS OPERASI:</div>
+                                <div class="flex justify-between text-slate-300 pl-3"><span>Penerimaan Kas dari Pelanggan</span> <span>Rp 2.380.000.000</span></div>
+                                <div class="flex justify-between text-slate-300 pl-3"><span>Pembayaran Kas kepada Pemasok & Vendor</span> <span>(Rp 1.120.000.000)</span></div>
+                                <div class="flex justify-between text-slate-300 pl-3"><span>Pembayaran Kas untuk Gaji & Beban Karyawan</span> <span>(Rp 650.000.000)</span></div>
+                                <div class="flex justify-between text-slate-300 pl-3"><span>Pembayaran Pajak Penghasilan Badan</span> <span>(Rp 60.000.000)</span></div>
+                                <div class="flex justify-between font-bold text-emerald-300 border-t border-slate-800 pt-1"><span>Kas Bersih Dihasilkan dari Aktivitas Operasi</span> <span>Rp 550.000.000</span></div>
+
+
+                                <div class="font-bold text-amber-400 pt-2">2. ARUS KAS DARI AKTIVITAS INVESTASI:</div>
+                                <div class="flex justify-between text-slate-300 pl-3"><span>Perolehan Aset Tetap (Pabrik & Peralatan)</span> <span>(Rp 250.000.000)</span></div>
+                                <div class="flex justify-between text-slate-300 pl-3"><span>Hasil Penjualan Peralatan Bekas</span> <span>Rp 20.000.000</span></div>
+                                <div class="flex justify-between font-bold text-amber-300 border-t border-slate-800 pt-1"><span>Kas Bersih Digunakan untuk Aktivitas Investasi</span> <span>(Rp 230.000.000)</span></div>
+
+
+                                <div class="font-bold text-indigo-400 pt-2">3. ARUS KAS DARI AKTIVITAS PENDANAAN:</div>
+                                <div class="flex justify-between text-slate-300 pl-3"><span>Pembayaran Pokok Liabilitas Sewa (PSAK 73)</span> <span>(Rp 80.000.000)</span></div>
+                                <div class="flex justify-between text-slate-300 pl-3"><span>Pembayaran Pembagian Dividen Saham</span> <span>(Rp 60.000.000)</span></div>
+                                <div class="flex justify-between font-bold text-indigo-300 border-t border-slate-800 pt-1"><span>Kas Bersih Digunakan untuk Aktivitas Pendanaan</span> <span>(Rp 140.000.000)</span></div>
+
+
+                                <div class="flex justify-between font-black text-blue-400 border-t-2 border-slate-700 pt-2 text-sm"><span>KENAIKAN NETO KAS DAN SETARA KAS</span> <span>Rp 180.000.000</span></div>
+                                <div class="flex justify-between text-slate-400 pl-3"><span>Kas dan Setara Kas Awal Periode</span> <span>Rp 1.070.000.000</span></div>
+                                <div class="flex justify-between font-bold text-white border-t border-slate-800 pt-1"><span>KAS DAN SETARA KAS AKHIR PERIODE</span> <span>Rp 1.250.000.000</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- SUB 4: PERUBAHAN EKUITAS -->
+                    <div id="psak-eq" class="psak-sub-content hidden space-y-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg overflow-x-auto">
+                            <h3 class="text-sm font-bold text-white mb-3">Laporan Perubahan Ekuitas Konsolidasi</h3>
+                            <table class="w-full text-left text-xs font-mono min-w-[700px]">
+                                <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-3">Komponen Ekuitas</th>
+                                        <th class="p-3">Modal Saham</th>
+                                        <th class="p-3">Saldo Laba (RE)</th>
+                                        <th class="p-3">OCI Revaluasi</th>
+                                        <th class="p-3 text-right">Total Ekuitas</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    <tr>
+                                        <td class="p-3 font-bold text-white">Saldo per 1 Januari 2026</td>
+                                        <td class="p-3">Rp 3.500.000.000</td>
+                                        <td class="p-3">Rp 1.580.000.000</td>
+                                        <td class="p-3">Rp 0</td>
+                                        <td class="p-3 text-right font-bold">Rp 5.080.000.000</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 text-emerald-400">Laba Bersih Periode Berjalan</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3 text-emerald-400">Rp 480.000.000</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3 text-right text-emerald-400 font-bold">Rp 480.000.000</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 text-purple-400">Penghasilan Komprehensif Lain (OCI)</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3">(Rp 10.000.000)</td>
+                                        <td class="p-3 text-purple-400">Rp 45.000.000</td>
+                                        <td class="p-3 text-right text-purple-400 font-bold">Rp 35.000.000</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 text-rose-400">Pembayaran Dividen Kas</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3 text-rose-400">(Rp 95.000.000)</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3 text-right text-rose-400 font-bold">(Rp 95.000.000)</td>
+                                    </tr>
+                                    <tr class="bg-slate-950 font-bold text-emerald-400 border-t border-slate-700">
+                                        <td class="p-3">Saldo per 31 Agustus 2026</td>
+                                        <td class="p-3">Rp 3.500.000.000</td>
+                                        <td class="p-3">Rp 1.955.000.000</td>
+                                        <td class="p-3">Rp 45.000.000</td>
+                                        <td class="p-3 text-right text-sm">Rp 5.500.000.000</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- NEW TAB: PERPAJAKAN INDONESIA & PSAK 46 -->
+                <div id="tab-tax-fiscal" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-calculator text-amber-400"></i> Kepatuhan Pajak Indonesia & PSAK 46 (Rekonsiliasi Fiskal)
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">Estimasi PPh Badan, Beda Tetap/Beda Waktu, PPN Masa, PPh Potput, & Pajak Tangguhan.</p>
+                        </div>
+                        <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs px-3 py-1 rounded-lg font-bold">Tax Compliance Rate: 100%</span>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">PPh Badan Terutang (Pasal 29)</div>
+                            <div class="text-xl font-bold text-amber-400 mt-1">Rp 65.000.000</div>
+                            <div class="text-[10px] text-slate-500 mt-1">Tarif Efektif 22%</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Aset Pajak Tangguhan (PSAK 46)</div>
+                            <div class="text-xl font-bold text-emerald-400 mt-1">Rp 130.000.000</div>
+                            <div class="text-[10px] text-slate-500 mt-1">Akibat Beda Waktu CKPN & Depresiasi</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">PPN Kurang/Lebih Bayar</div>
+                            <div class="text-xl font-bold text-blue-400 mt-1">Rp 32.500.000</div>
+                            <div class="text-[10px] text-emerald-400 mt-1">Status: Kurang Bayar (Siap Setor)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">PPh Potput (21, 23, 4(2))</div>
+                            <div class="text-xl font-bold text-purple-400 mt-1">Rp 22.800.000</div>
+                            <div class="text-[10px] text-slate-500 mt-1">SPT Masa Tepat Waktu</div>
+                        </div>
+                    </div>
+
+
+                    <!-- Rekonsiliasi Fiskal Detail Table -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-lg">
+                        <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-2">Kertas Kerja Rekonsiliasi Fiskal PPh Badan</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs font-mono min-w-[700px]">
+                                <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-3">Keterangan Akun Keuangan</th>
+                                        <th class="p-3">Komersial (SAK)</th>
+                                        <th class="p-3">Koreksi Positif / (Negatif)</th>
+                                        <th class="p-3">Jenis Koreksi</th>
+                                        <th class="p-3 text-right">Fiskal</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    <tr>
+                                        <td class="p-3 font-bold text-white">Laba Sebelum Pajak Komersial</td>
+                                        <td class="p-3">Rp 545.000.000</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3 text-right font-bold">Rp 545.000.000</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 text-slate-300">Biaya Entertainment Tanpa Daftar Nominatif</td>
+                                        <td class="p-3">Rp 25.000.000</td>
+                                        <td class="p-3 text-rose-400">+ Rp 25.000.000</td>
+                                        <td class="p-3"><span class="bg-rose-500/20 text-rose-300 text-[9px] px-2 py-0.5 rounded">Beda Tetap</span></td>
+                                        <td class="p-3 text-right">Rp 0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 text-slate-300">Sanksi & Denda Pajak Masa Lalu</td>
+                                        <td class="p-3">Rp 10.000.000</td>
+                                        <td class="p-3 text-rose-400">+ Rp 10.000.000</td>
+                                        <td class="p-3"><span class="bg-rose-500/20 text-rose-300 text-[9px] px-2 py-0.5 rounded">Beda Tetap</span></td>
+                                        <td class="p-3 text-right">Rp 0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 text-slate-300">Penyisihan CKPN Piutang (PSAK 71)</td>
+                                        <td class="p-3">Rp 35.000.000</td>
+                                        <td class="p-3 text-amber-400">+ Rp 35.000.000</td>
+                                        <td class="p-3"><span class="bg-amber-500/20 text-amber-300 text-[9px] px-2 py-0.5 rounded">Beda Waktu (PSAK 46)</span></td>
+                                        <td class="p-3 text-right">Rp 0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 text-slate-300">Beda Depresiasi Aset Tetap (Fiskal vs Komersial)</td>
+                                        <td class="p-3">Rp 145.000.000</td>
+                                        <td class="p-3 text-emerald-400">(Rp 20.000.000)</td>
+                                        <td class="p-3"><span class="bg-amber-500/20 text-amber-300 text-[9px] px-2 py-0.5 rounded">Beda Waktu (PSAK 46)</span></td>
+                                        <td class="p-3 text-right">Rp 125.000.000</td>
+                                    </tr>
+                                    <tr class="bg-slate-950 font-bold text-amber-400 border-t border-slate-700">
+                                        <td class="p-3">Penghasilan Kena Pajak (PhKP) Fiskal</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3">+ Rp 50.000.000</td>
+                                        <td class="p-3">-</td>
+                                        <td class="p-3 text-right text-sm">Rp 595.000.000</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- NEW TAB: CADANGAN KERUGIAN PENURUNAN NILAI (PSAK 71 ECL MODEL) -->
+                <div id="tab-ecl-psak71" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line-down text-rose-400"></i> Matriks CKPN & Expected Credit Loss (ECL - PSAK 71)
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">Penerapan instrumen keuangan PSAK 71 untuk estimasi cadangan penurunan nilai piutang usaha.</p>
+                        </div>
+                        <button onclick="showToast('PSAK 71 Updated', 'Matriks ECL diperbarui berbasis data historis 3 tahun.', 'info')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded-lg text-white font-bold"><i class="fa-solid fa-sync mr-1"></i> Rekalkulasi ECL</button>
+                    </div>
+
+
+                    <!-- Matriks Provisioning PSAK 71 -->
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Current (0 Hari)</div>
+                            <div class="text-lg font-bold text-emerald-400 mt-1">Rp 1.100.000.000</div>
+                            <div class="text-[10px] text-slate-500 mt-1">ECL Rate: <b>0.5%</b> (Rp 5.5 Jt)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">1 - 30 Hari</div>
+                            <div class="text-lg font-bold text-emerald-300 mt-1">Rp 450.000.000</div>
+                            <div class="text-[10px] text-slate-500 mt-1">ECL Rate: <b>2.0%</b> (Rp 9.0 Jt)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">31 - 60 Hari</div>
+                            <div class="text-lg font-bold text-amber-400 mt-1">Rp 350.000.000</div>
+                            <div class="text-[10px] text-slate-500 mt-1">ECL Rate: <b>5.0%</b> (Rp 17.5 Jt)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">61 - 90 Hari</div>
+                            <div class="text-lg font-bold text-orange-400 mt-1">Rp 200.000.000</div>
+                            <div class="text-[10px] text-slate-500 mt-1">ECL Rate: <b>15.0%</b> (Rp 30.0 Jt)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-rose-900/40 p-4 rounded-xl text-center pulse-red">
+                            <div class="text-[10px] text-rose-300 uppercase font-bold">&gt; 90 Hari (Macet)</div>
+                            <div class="text-lg font-bold text-rose-500 mt-1">Rp 300.000.000</div>
+                            <div class="text-[10px] text-rose-400 mt-1">ECL Rate: <b>50.0%</b> (Rp 150.0 Jt)</div>
+                        </div>
+                    </div>
+
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <h3 class="text-sm font-bold text-white">Ringkasan Posisi CKPN PSAK 71</h3>
+                            <span class="text-xs font-mono font-bold text-rose-400">Total CKPN Terbentuk: Rp 215.000.000</span>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div>
+                                    <div class="font-bold text-white">Total Piutang Usaha Bruto</div>
+                                    <div class="text-[10px] text-slate-500">Nilai pencatatan Tagihan Pelanggan Konsolidasi</div>
+                                </div>
+                                <div class="font-mono font-bold text-white">Rp 2.400.000.000</div>
+                            </div>
+                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div>
+                                    <div class="font-bold text-rose-400">Akumulasi Penyisihan CKPN (Dideduksi dari Aset)</div>
+                                    <div class="text-[10px] text-slate-500">Akumulasi kerugian ekspektasi PSAK 71</div>
+                                </div>
+                                <div class="font-mono font-bold text-rose-400">(Rp 215.000.000)</div>
+                            </div>
+                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div>
+                                    <div class="font-bold text-emerald-400">Nilai Bersih Piutang Usaha di Neraca (Net Carrying Value)</div>
+                                    <div class="text-[10px] text-slate-500">Angka yang disajikan dalam Posisi Keuangan</div>
+                                </div>
+                                <div class="font-mono font-bold text-emerald-400">Rp 2.185.000.000</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- NEW TAB: CATATAN ATAS LAPORAN KEUANGAN (CALK & POLICY) -->
+                <div id="tab-calk-notes" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-file-lines text-blue-400"></i> Catatan Atas Laporan Keuangan (CALK) & Kebijakan Akuntansi
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">Ringkasan kebijakan akuntansi penting dan keterangan penjelasan angka laporan SAK.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Note 1: PSAK 72 Revenue -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-check-circle"></i> Catatan 1: Pengakuan Pendapatan (PSAK 72)
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Pendapatan diakui saat kewajiban pelaksanaan (performance obligation) telah dipenuhi melalui penyerahan barang/jasa kepada pelanggan. Kontrak jangka panjang diakui secara bertahap (*over time*) sesuai persentase penyelesaian fisik.
+                            </p>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[11px] text-slate-400">
+                                Unearned Revenue / Kontrak Liabilitas terdaftar: <b>Rp 140.000.000</b>.
+                            </div>
+                        </div>
+
+
+                        <!-- Note 2: PSAK 73 Lease -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-building-user"></i> Catatan 2: Akuntansi Sewa (PSAK 73)
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Seluruh sewa gedung kantor dan kendaraan operasional jangka panjang dikapitalisasi sebagai <b>Aset Hak-Guna</b> dan diakui kewajiban <b>Liabilitas Sewa</b> berdasarkan *present value* dari pembayaran sewa masa depan menggunakan discount rate 8.5%.
+                            </p>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[11px] text-slate-400">
+                                Beban Penyusutan Aset Hak-Guna Q3: <b>Rp 45.000.000</b>.
+                            </div>
+                        </div>
+
+
+                        <!-- Note 3: PSAK 16 Fixed Assets -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-industry"></i> Catatan 3: Aset Tetap & Depresiasi (PSAK 16)
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Aset tetap dicatat berdasarkan biaya perolehan dikurangi akumulasi penyusutan. Penyusutan dihitung dengan metode garis lurus (*straight-line method*) dengan estimasi masa manfaat: Bangunan 20 tahun, Mesin 8 tahun, Kendaraan 5 tahun.
+                            </p>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[11px] text-slate-400">
+                                Revaluasi Tanah & Bangunan Pabrik: Surplus <b>Rp 45.000.000</b> dicatat pada OCI.
+                            </div>
+                        </div>
+
+
+                        <!-- Note 4: PSAK 24 Imbalan Kerja -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-user-shield"></i> Catatan 4: Imbalan Kerja (PSAK 24)
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Liabilitas imbalan pascakerja dihitung menggunakan metode *Projected Unit Credit* oleh aktuaris independen. Keuntungan/kerugian aktuarial diakui langsung pada Penghasilan Komprehensif Lain (OCI).
+                            </p>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[11px] text-slate-400">
+                                Saldo Kewajiban Aktuarial Pascakerja: <b>Rp 120.000.000</b>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB: SUBORDINATE & TEAM CENTER -->
+                <div id="tab-subordinates" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-users-gear text-emerald-400 mr-2"></i> Executive Team & Subordinate Management Hub</h2>
+                            <p class="text-xs text-slate-400 mt-1">Pantau penyerahan laporan berkala, instruksi turunan, dan evaluasi kinerja bawahan langsung.</p>
+                        </div>
+                        <button onclick="openSendDirectiveModal()" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded-lg text-white font-bold shadow-lg"><i class="fa-solid fa-paper-plane mr-1"></i> Kirim Instruksi Direksi ke Bawahan</button>
+                    </div>
+
+
+                    <!-- Subordinates Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Subordinate 1 -->
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                            <div class="flex items-center gap-3">
+                                <img src="https://ui-avatars.com/api/?name=Hendra+VP&background=059669&color=fff" class="w-10 h-10 rounded-xl" alt="VP Finance">
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">Hendra Wijaya, SE.</h4>
+                                    <div class="text-[10px] text-slate-400">Vice President Finance</div>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs space-y-1">
+                                <div class="flex justify-between text-slate-400"><span>Status Laporan SAK:</span> <span class="text-emerald-400 font-bold">Lengkap & Ready</span></div>
+                                <div class="flex justify-between text-slate-400"><span>Target KPI Keuangan:</span> <span class="text-white font-bold">94%</span></div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="replySubordinate('Hendra Wijaya (VP Finance)', '')" class="w-full bg-slate-800 hover:bg-slate-700 text-xs py-1.5 rounded text-white font-semibold">Kirim Pesan</button>
+                            </div>
+                        </div>
+
+
+                        <!-- Subordinate 2 -->
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                            <div class="flex items-center gap-3">
+                                <img src="https://ui-avatars.com/api/?name=Rina+COO&background=2563eb&color=fff" class="w-10 h-10 rounded-xl" alt="VP Operations">
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">Ir. Rina Pratama</h4>
+                                    <div class="text-[10px] text-slate-400">VP Operations & Logistics</div>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs space-y-1">
+                                <div class="flex justify-between text-slate-400"><span>Status Laporan Bulan Ini:</span> <span class="text-amber-400 font-bold">Pending Review Opex</span></div>
+                                <div class="flex justify-between text-slate-400"><span>Target KPI Operasional:</span> <span class="text-white font-bold">88%</span></div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="replySubordinate('Rina Pratama (VP Ops)', '')" class="w-full bg-slate-800 hover:bg-slate-700 text-xs py-1.5 rounded text-white font-semibold">Kirim Pesan</button>
+                            </div>
+                        </div>
+
+
+                        <!-- Subordinate 3 -->
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                            <div class="flex items-center gap-3">
+                                <img src="https://ui-avatars.com/api/?name=Dimas+Sales&background=d97706&color=fff" class="w-10 h-10 rounded-xl" alt="Head of Sales">
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">Dimas Anggara</h4>
+                                    <div class="text-[10px] text-slate-400">Head of Commercial & Sales</div>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs space-y-1">
+                                <div class="flex justify-between text-slate-400"><span>Status Laporan Bulan Ini:</span> <span class="text-emerald-400 font-bold">Lengkap (+4.2%)</span></div>
+                                <div class="flex justify-between text-slate-400"><span>Target Sales Revenue:</span> <span class="text-emerald-400 font-bold">104.2%</span></div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="replySubordinate('Dimas Anggara (Head Sales)', '')" class="w-full bg-slate-800 hover:bg-slate-700 text-xs py-1.5 rounded text-white font-semibold">Kirim Pesan</button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Laporan Terbaru Masuk Dari Tim -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                        <h3 class="text-sm font-bold text-white flex items-center justify-between">
+                            <span><i class="fa-solid fa-inbox text-indigo-400 mr-2"></i> Laporan & Notifikasi Terakhir Masuk Dari Tim Bawahan</span>
+                            <span class="text-[10px] text-slate-400">Diperbarui real-time</span>
+                        </h3>
+
+
+                        <div class="space-y-3">
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-white">Laporan Audit AR & Kolektibilitas Piutang (PSAK 71)</span>
+                                        <span class="bg-emerald-500/20 text-emerald-400 text-[9px] px-2 py-0.5 rounded font-bold">VP Finance</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 mt-1">Daftar penanganan pelanggan overdue & estimasi penyelesaian piutang bulan September.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="showToast('Mengunduh Laporan', 'File Audit AR sedang diunduh...', 'info')" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded text-slate-200 border border-slate-700"><i class="fa-solid fa-download mr-1"></i> Download File</button>
+                                    <button onclick="replySubordinate('VP Finance', 'Minta percepatan penagihan PT Global Sentosa.')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded text-white font-bold">Tanggapi</button>
+                                </div>
+                            </div>
+
+
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-white">Pengajuan Pergeseran Budget Opex Surabaya</span>
+                                        <span class="bg-amber-500/20 text-amber-400 text-[9px] px-2 py-0.5 rounded font-bold">VP Operations</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 mt-1">Permohonan alokasi tambahan Rp 85 Juta untuk biaya perbaikan fasilitas gudang.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="switchTab('tab-approval')" class="bg-amber-600 hover:bg-amber-500 text-xs px-3 py-1.5 rounded text-white font-bold">Buka Approval</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 2: FINANCIAL OVERVIEW (P&L) -->
+                <div id="tab-financial" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-scale-balanced text-indigo-400 mr-2"></i> Laporan Laba Rugi & Neraca Overview</h2>
+                            <p class="text-xs text-slate-400 mt-1">Laporan konsolidasi periode berjalan.</p>
+                        </div>
+                        <button onclick="showToast('Download Laporan', 'File P&L Excel sedang diproses...', 'success')" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded text-white border border-slate-700"><i class="fa-solid fa-file-excel mr-1"></i> Unduh XLS</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Laba Rugi -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                            <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-3 mb-3">Laba Rugi (Profit & Loss)</h3>
+                            <div class="space-y-3 flex-1">
+                                <div class="flex justify-between text-xs text-slate-300"><span>Pendapatan Neto</span> <span class="font-mono font-bold text-white">Rp 2.450.000.000</span></div>
+                                <div class="flex justify-between text-xs text-slate-400"><span>Harga Pokok Penjualan (HPP)</span> <span class="font-mono">(Rp 1.150.000.000)</span></div>
+                                <div class="flex justify-between text-xs font-bold text-emerald-400 border-t border-slate-800 pt-2"><span>Laba Kotor (Gross Profit)</span> <span class="font-mono">Rp 1.300.000.000</span></div>
+                                <div class="flex justify-between text-xs text-slate-400 mt-2"><span>Beban Operasional</span> <span class="font-mono">(Rp 550.000.000)</span></div>
+                                <div class="flex justify-between text-xs text-slate-400"><span>Beban Marketing & Adm</span> <span class="font-mono">(Rp 180.000.000)</span></div>
+                                <div class="flex justify-between text-xs font-bold text-indigo-400 border-t border-slate-800 pt-2"><span>EBITDA</span> <span class="font-mono">Rp 570.000.000</span></div>
+                                <div class="flex justify-between text-xs text-slate-400 mt-2"><span>Pajak & Bunga</span> <span class="font-mono">(Rp 90.000.000)</span></div>
+                                <div class="flex justify-between text-sm font-black text-emerald-500 border-t border-slate-800 pt-2 mt-auto"><span>LABA BERSIH (Net Income)</span> <span class="font-mono">Rp 480.000.000</span></div>
+                            </div>
+                        </div>
+                        <!-- Neraca -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                            <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-3 mb-3">Posisi Keuangan (Neraca Ringkas)</h3>
+                            <div class="space-y-4 flex-1">
+                                <div>
+                                    <div class="flex justify-between text-xs text-slate-400 mb-1"><span>Kas & Bank</span> <span class="font-mono">Rp 1.250.000.000</span></div>
+                                    <div class="flex justify-between text-xs text-slate-400 mb-1"><span>Piutang Usaha (Neto)</span> <span class="font-mono">Rp 2.185.000.000</span></div>
+                                    <div class="flex justify-between text-xs text-slate-400 mb-1"><span>Persediaan & Aset Lain</span> <span class="font-mono">Rp 3.715.000.000</span></div>
+                                    <div class="flex justify-between text-xs font-bold text-blue-400 border-t border-slate-800 mt-2 pt-2"><span>TOTAL ASET</span> <span class="font-mono">Rp 7.150.000.000</span></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs text-slate-400 mb-1"><span>Hutang Usaha & Pajak</span> <span class="font-mono text-rose-400">Rp 570.000.000</span></div>
+                                    <div class="flex justify-between text-xs text-slate-400 mb-1"><span>Hutang Bank & Sewa Jangka Panjang</span> <span class="font-mono">Rp 1.080.000.000</span></div>
+                                    <div class="flex justify-between text-xs font-bold text-rose-400 border-t border-slate-800 mt-2 pt-2"><span>TOTAL LIABILITAS</span> <span class="font-mono">Rp 1.650.000.000</span></div>
+                                </div>
+                                <div class="mt-auto pt-2 border-t border-slate-800 flex justify-between text-xs font-bold text-emerald-400">
+                                    <span>TOTAL EKUITAS</span> <span class="font-mono">Rp 5.500.000.000</span>
+                                </div>
+                                <div class="text-[9px] text-right text-emerald-500 font-mono"><i class="fa-solid fa-check"></i> Balanced</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 3: FINANCIAL RATIOS -->
+                <div id="tab-ratios" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                        <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-chart-pie text-indigo-400 mr-2"></i> Financial Ratios & SAK Performance (KPI)</h2>
+                        <p class="text-xs text-slate-400 mt-1">Metrik pengukuran kesehatan dan efisiensi perusahaan berbasis SAK.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Current Ratio</div>
+                            <div class="text-xl font-bold text-white mb-2">2.5x</div>
+                            <div class="w-full bg-slate-800 h-1 rounded-full"><div class="bg-emerald-500 h-1 rounded-full" style="width: 80%"></div></div>
+                            <div class="text-[9px] text-emerald-400 mt-2">Sangat Sehat (> 1.5x)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Debt to Equity (DER)</div>
+                            <div class="text-xl font-bold text-white mb-2">0.3x</div>
+                            <div class="w-full bg-slate-800 h-1 rounded-full"><div class="bg-emerald-500 h-1 rounded-full" style="width: 30%"></div></div>
+                            <div class="text-[9px] text-emerald-400 mt-2">Risiko Rendah (&lt; 1.0x)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Net Profit Margin</div>
+                            <div class="text-xl font-bold text-white mb-2">19.5%</div>
+                            <div class="w-full bg-slate-800 h-1 rounded-full"><div class="bg-indigo-500 h-1 rounded-full" style="width: 60%"></div></div>
+                            <div class="text-[9px] text-indigo-400 mt-2">Stabil (Target 20%)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Return on Equity (ROE)</div>
+                            <div class="text-xl font-bold text-white mb-2">8.7%</div>
+                            <div class="w-full bg-slate-800 h-1 rounded-full"><div class="bg-amber-500 h-1 rounded-full" style="width: 45%"></div></div>
+                            <div class="text-[9px] text-amber-400 mt-2">Perlu Ditingkatkan</div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 4: CASH MANAGEMENT -->
+                <div id="tab-cash" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                        <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-money-bill-wave text-emerald-400 mr-2"></i> Cash Management</h2>
+                        <p class="text-xs text-slate-400 mt-1">Pemantauan arus kas dan likuiditas.</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                        <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+                            <h3 class="text-sm font-bold text-slate-300">Komposisi Kas & Setara Kas (PSAK 2)</h3>
+                            <span class="text-sm font-black text-white">Total: Rp 1.250.000.000</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-building-columns text-blue-400"></i> <span class="text-xs text-slate-300">Bank BCA (Operasional Utama)</span></div>
+                                <span class="text-xs font-mono font-bold text-white">Rp 850.000.000</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-building-columns text-emerald-400"></i> <span class="text-xs text-slate-300">Bank Mandiri (Pajak/Gaji)</span></div>
+                                <span class="text-xs font-mono font-bold text-white">Rp 350.000.000</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-wallet text-amber-400"></i> <span class="text-xs text-slate-300">Petty Cash Operasional</span></div>
+                                <span class="text-xs font-mono font-bold text-white">Rp 50.000.000</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 5: AR & AP AGING -->
+                <div id="tab-aging" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-hand-holding-dollar text-rose-400 mr-2"></i> Account Receivable (AR) & AP Aging</h2>
+                            <p class="text-xs text-slate-400 mt-1">Umur piutang pelanggan dan utang usaha vendor.</p>
+                        </div>
+                        <button onclick="showToast('Notifikasi Sent', 'Reminder Email telah dikirim ke 5 pelanggan overdue.', 'success')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded text-white shadow-lg"><i class="fa-solid fa-envelope mr-1"></i> Kirim Reminder Massal</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-2">Belum Jatuh Tempo</div>
+                            <div class="text-xl font-bold text-emerald-400">Rp 1.1M</div>
+                            <div class="text-[10px] text-slate-500 mt-1">Aman</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-2">1 - 30 Hari (Overdue)</div>
+                            <div class="text-xl font-bold text-amber-400">Rp 450 Jt</div>
+                            <div class="text-[10px] text-slate-500 mt-1">Follow up via Telp</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-2">31 - 60 Hari</div>
+                            <div class="text-xl font-bold text-orange-500">Rp 350 Jt</div>
+                            <div class="text-[10px] text-slate-500 mt-1">Tahan Pengiriman</div>
+                        </div>
+                        <div class="bg-slate-900 border border-rose-900/30 p-4 rounded-xl text-center pulse-red">
+                            <div class="text-[10px] text-rose-300 uppercase font-bold mb-2">&gt; 90 Hari (Kritis)</div>
+                            <div class="text-xl font-bold text-rose-500">Rp 500 Jt</div>
+                            <div class="text-[10px] text-rose-400 mt-1">Tindakan Legal & CKPN</div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 6: CAPEX & INVESTMENTS -->
+                <div id="tab-capex" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-chart-gantt text-indigo-400 mr-2"></i> CapEx & Strategic Investment Portfolio</h2>
+                            <p class="text-xs text-slate-400 mt-1">Pelacakan investasi modal, anggaran belanja modal, dan estimasi ROI.</p>
+                        </div>
+                        <button onclick="showToast('CapEx Notice', 'Sesuai instruksi Super Admin, pengajuan CapEx > 500 Jt sedang ditangguhkan.', 'warning')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded text-white shadow-lg"><i class="fa-solid fa-plus mr-1"></i> Ajukan Proyek CapEx</button>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Total Anggaran CapEx 2026</div>
+                            <div class="text-xl font-black text-white mt-1">Rp 6,70 Miliar</div>
+                            <div class="text-[10px] text-emerald-400 mt-1">Realisasi: 67.1% (Rp 4,50 M)</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Proyek Aktif</div>
+                            <div class="text-xl font-black text-indigo-400 mt-1">3 Proyek</div>
+                            <div class="text-[10px] text-slate-400 mt-1">2 On-Track, 1 Perlu Review</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Proyeksi Rata-rata ROI</div>
+                            <div class="text-xl font-black text-emerald-400 mt-1">21.3% / Tahun</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Payback Period ~2.8 Tahun</div>
+                        </div>
+                    </div>
+
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                        <h3 class="text-sm font-bold text-white">Daftar Proyek Strategis</h3>
+                        
+                        <!-- Project 1 -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                            <div class="flex flex-col md:flex-row justify-between md:items-center gap-2 mb-2">
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">Pembaruan Infrastruktur Cloud & ERP Systems</h4>
+                                    <span class="text-[10px] text-slate-400">Divisi Teknologi & IT Ops</span>
+                                </div>
+                                <span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded self-start md:self-auto">On Track</span>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-400 mb-3">
+                                <div>Budget: <b class="text-white">Rp 1,5 M</b></div>
+                                <div>Terpakai: <b class="text-white">Rp 1,1 M</b></div>
+                                <div>Est. ROI: <b class="text-emerald-400">+18%</b></div>
+                                <div>Selesai: <b class="text-white">Q4 2026</b></div>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2">
+                                <div class="bg-indigo-500 h-2 rounded-full" style="width: 75%"></div>
+                            </div>
+                        </div>
+
+
+                        <!-- Project 2 -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                            <div class="flex flex-col md:flex-row justify-between md:items-center gap-2 mb-2">
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">Modernisasi Pabrik & Line Produksi Surabaya</h4>
+                                    <span class="text-[10px] text-slate-400">Divisi Manufaktur</span>
+                                </div>
+                                <span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded self-start md:self-auto">Hampir Selesai</span>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-400 mb-3">
+                                <div>Budget: <b class="text-white">Rp 3,2 M</b></div>
+                                <div>Terpakai: <b class="text-white">Rp 2,8 M</b></div>
+                                <div>Est. ROI: <b class="text-emerald-400">+24%</b></div>
+                                <div>Selesai: <b class="text-white">Q3 2026</b></div>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2">
+                                <div class="bg-emerald-500 h-2 rounded-full" style="width: 88%"></div>
+                            </div>
+                        </div>
+
+
+                        <!-- Project 3 -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                            <div class="flex flex-col md:flex-row justify-between md:items-center gap-2 mb-2">
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">Fulfillment Center Logistik Otomatis</h4>
+                                    <span class="text-[10px] text-slate-400">Divisi Supply Chain</span>
+                                </div>
+                                <span class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded self-start md:self-auto">Ditangguhkan (Super Admin Directive)</span>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-400 mb-3">
+                                <div>Budget: <b class="text-white">Rp 2,0 M</b></div>
+                                <div>Terpakai: <b class="text-white">Rp 0,6 M</b></div>
+                                <div>Est. ROI: <b class="text-indigo-400">+22%</b></div>
+                                <div>Selesai: <b class="text-white">Q2 2027</b></div>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2">
+                                <div class="bg-amber-500 h-2 rounded-full" style="width: 30%"></div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+
+                <!-- TAB 7: BALANCED SCORECARD -->
+                <div id="tab-scorecard" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                        <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-bullseye text-indigo-400 mr-2"></i> Balanced Scorecard (Strategic KPIs)</h2>
+                        <p class="text-xs text-slate-400 mt-1">Pemantauan 4 perspektif utama keberlanjutan organisasi.</p>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Perspective 1 -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-sm font-bold text-indigo-400 flex items-center gap-2">
+                                <i class="fa-solid fa-coins"></i> 1. Financial Perspective
+                            </h3>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-300">Net Profit Margin Target (20%)</span>
+                                    <span class="font-mono font-bold text-emerald-400">19.5% <i class="fa-solid fa-check text-[10px]"></i></span>
+                                </div>
+                                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-300">EBITDA Growth YoY (+15%)</span>
+                                    <span class="font-mono font-bold text-emerald-400">+16.2% <i class="fa-solid fa-check text-[10px]"></i></span>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Perspective 2 -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-sm font-bold text-blue-400 flex items-center gap-2">
+                                <i class="fa-solid fa-users"></i> 2. Customer Perspective
+                            </h3>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-300">Net Promoter Score (NPS)</span>
+                                    <span class="font-mono font-bold text-blue-400">68 (Sangat Baik)</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-300">Customer Churn Rate (&lt;3%)</span>
+                                    <span class="font-mono font-bold text-emerald-400">2.1%</span>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Perspective 3 -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
+                                <i class="fa-solid fa-gears"></i> 3. Internal Business Processes
+                            </h3>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-300">Order Lead Time (Target 48 Jam)</span>
+                                    <span class="font-mono font-bold text-amber-400">52 Jam <i class="fa-solid fa-triangle-exclamation text-[10px]"></i></span>
+                                </div>
+                                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-300">SLA Availability Sistem ERP</span>
+                                    <span class="font-mono font-bold text-emerald-400">99.8%</span>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Perspective 4 -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-sm font-bold text-purple-400 flex items-center gap-2">
+                                <i class="fa-solid fa-graduation-cap"></i> 4. Learning & Growth
+                            </h3>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-300">Kepuasan Karyawan (eNPS)</span>
+                                    <span class="font-mono font-bold text-purple-400">82%</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    <span class="text-slate-300">Sertifikasi Talenta AI & Digital</span>
+                                    <span class="font-mono font-bold text-emerald-400">120 Karyawan</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 8: FORECAST & SCENARIO ANALYSIS -->
+                <div id="tab-forecast" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-compass-drafting text-blue-400 mr-2"></i> Scenario Analysis (What-If)</h2>
+                            <p class="text-xs text-slate-400 mt-1">Simulasikan dampak perubahan variabel terhadap Laba SAK (Asumsi Base Profit: Rp 480 Juta).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <div class="flex flex-col md:flex-row gap-8">
+                            <div class="w-full md:w-1/3 space-y-5">
+                                <h3 class="text-sm font-bold text-slate-300 border-b border-slate-800 pb-2">Variabel Input Simulasi</h3>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-slate-400"><span>Perubahan Revenue (%)</span> <span id="val-rev" class="text-white font-bold">0%</span></div>
+                                    <input type="range" id="sim-rev" class="w-full accent-blue-500" min="-30" max="30" value="0" oninput="updateSimValues()">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-slate-400"><span>Perubahan Opex (%)</span> <span id="val-opex" class="text-white font-bold">0%</span></div>
+                                    <input type="range" id="sim-opex" class="w-full accent-amber-500" min="-30" max="50" value="0" oninput="updateSimValues()">
+                                </div>
+                                <div>
+                                    <button onclick="runSimulation()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 rounded-lg shadow-lg transition-transform active:scale-95">Jalankan Simulasi SAK</button>
+                                </div>
+                            </div>
+                            <div class="w-full md:w-2/3 bg-slate-950 p-5 rounded-xl border border-slate-800">
+                                <h3 class="text-sm font-bold text-slate-300 border-b border-slate-800 pb-2 mb-4">Proyeksi Dampak Keuangan</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div class="text-[10px] text-slate-500 uppercase">Simulasi Laba Bersih</div>
+                                        <div id="sim-net" class="text-xl md:text-2xl font-bold text-white">Rp 480 Jt</div>
+                                        <div id="sim-net-diff" class="text-[10px] mt-1 text-slate-500">Base: Rp 480 Jt</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-[10px] text-slate-500 uppercase">Cash Runway</div>
+                                        <div id="sim-runway" class="text-lg font-bold text-white">4 Bulan</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-[10px] text-slate-500 uppercase">Status Kelangsungan</div>
+                                        <div id="sim-status" class="text-lg font-bold text-emerald-400">Aman</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 9: RISK & ANOMALY -->
+                <div id="tab-anomaly" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-shield-virus text-rose-500 mr-2"></i> Fraud Monitoring & Risk Dashboard</h2>
+                            <p class="text-xs text-slate-400 mt-1">Pendeteksi anomali otomatis menggunakan analisis pola transaksi.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- High Risk Transactions -->
+                        <div class="lg:col-span-2 bg-slate-900 border border-rose-900/30 rounded-2xl p-5">
+                            <h3 class="text-sm font-bold text-rose-400 border-b border-slate-800 pb-3 mb-4 flex justify-between">
+                                <span><i class="fa-solid fa-triangle-exclamation mr-2"></i> Anomali Transaksi Ditemukan</span>
+                                <span class="bg-rose-500/20 text-rose-300 text-[10px] px-2 py-0.5 rounded">2 Aktif</span>
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="bg-slate-950 border border-rose-500/20 rounded-xl p-4">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div class="font-bold text-white text-sm">Pengeluaran Rp 475.000.000</div>
+                                        <div class="text-[10px] font-mono text-slate-500">TRX-2026-0899</div>
+                                    </div>
+                                    <ul class="text-xs text-rose-300/80 list-disc ml-4 space-y-1 mb-4">
+                                        <li>Ditujukan ke <b>Vendor Baru</b> (PT Mitra Konstruksi).</li>
+                                        <li>Transaksi dilakukan <b>2 hari</b> setelah profil vendor dibuat oleh Admin.</li>
+                                        <li>Melebihi alokasi budget departemen sebesar <b>32%</b>.</li>
+                                    </ul>
+                                    <div class="flex gap-2">
+                                        <button onclick="showToast('Investigasi Dimulai', 'Pesan dikirim ke Internal Audit.', 'info')" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded text-white border border-slate-700"><i class="fa-solid fa-magnifying-glass mr-1"></i> Minta Investigasi</button>
+                                        <button onclick="showToast('Transaksi Ditahan', 'Dana dibekukan sementara di sistem ERP.', 'warning')" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-500 text-xs px-3 py-1.5 rounded border border-amber-500/30"><i class="fa-solid fa-hand mr-1"></i> Hold Transaksi</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-950 border border-amber-500/20 rounded-xl p-4">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div class="font-bold text-white text-sm">Indikasi Split Transaction (Rp 45.000.000 x 3)</div>
+                                        <div class="text-[10px] font-mono text-slate-500">MULTI-TRX</div>
+                                    </div>
+                                    <ul class="text-xs text-amber-300/80 list-disc ml-4 space-y-1 mb-4">
+                                        <li>3 transaksi berturut-turut ke vendor yang sama dalam 24 jam.</li>
+                                        <li>Total Rp 135 Juta (Melebihi batas otorisasi Admin Rp 50 Juta jika digabung).</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Enterprise Risk -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-3 mb-4">Enterprise Financial Risk</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-300">Credit Risk (Piutang PSAK 71)</span>
+                                        <span class="text-rose-400 font-bold">CRITICAL</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-1.5"><div class="bg-rose-500 h-1.5 rounded-full" style="width: 85%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-300">Liquidity Risk</span>
+                                        <span class="text-emerald-400 font-bold">LOW</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-1.5"><div class="bg-emerald-500 h-1.5 rounded-full" style="width: 20%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-300">Tax Audit Exposure</span>
+                                        <span class="text-amber-400 font-bold">MEDIUM</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 rounded-full h-1.5"><div class="bg-amber-500 h-1.5 rounded-full" style="width: 45%"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 10: ESG & FX RISK EXPOSURE -->
+                <div id="tab-esg" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-leaf text-emerald-400 mr-2"></i> ESG & Foreign Exchange (FX) Risk</h2>
+                            <p class="text-xs text-slate-400 mt-1">Laporan keberlanjutan lingkungan, sosial, tata kelola, dan eksposur mata uang asing.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- FX Exposure -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+                            <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-2 flex justify-between">
+                                <span><i class="fa-solid fa-globe text-blue-400 mr-2"></i> FX Currency Exposure</span>
+                                <span class="text-xs text-emerald-400">Hedging Ratio: 75%</span>
+                            </h3>
+                            <div class="space-y-3 text-xs">
+                                <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div>
+                                        <div class="font-bold text-white">USD / IDR Exposure</div>
+                                        <div class="text-[10px] text-slate-500">Lisensi Software & Impor Bahan Baku</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-mono font-bold text-white">$ 450,000</div>
+                                        <div class="text-[10px] text-amber-400">Terproteksi Forward Contract</div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div>
+                                        <div class="font-bold text-white">EUR / IDR Exposure</div>
+                                        <div class="text-[10px] text-slate-500">Suku Cadang Mesin Manufaktur</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-mono font-bold text-white">€ 120,000</div>
+                                        <div class="text-[10px] text-emerald-400">Terhedging Full</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- ESG Scorecard -->
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+                            <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-2"><i class="fa-solid fa-seedling text-emerald-400 mr-2"></i> ESG Scorecard</h3>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div class="text-[10px] text-slate-400 uppercase">Environmental</div>
+                                    <div class="text-lg font-black text-emerald-400 mt-1">A-</div>
+                                    <div class="text-[9px] text-slate-500 mt-1">-12% CO2 Emission</div>
+                                </div>
+                                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div class="text-[10px] text-slate-400 uppercase">Social</div>
+                                    <div class="text-lg font-black text-blue-400 mt-1">88/100</div>
+                                    <div class="text-[9px] text-slate-500 mt-1">42% Women Leadership</div>
+                                </div>
+                                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    <div class="text-[10px] text-slate-400 uppercase">Governance</div>
+                                    <div class="text-lg font-black text-purple-400 mt-1">Compliance</div>
+                                    <div class="text-[9px] text-slate-500 mt-1">100% ISO Certified</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 11: APPROVAL CENTER -->
+                <div id="tab-approval" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-check-double text-amber-500 mr-2"></i> Approval Strategis</h2>
+                            <p class="text-xs text-slate-400 mt-1">Otorisasi C-Suite untuk transaksi &gt; Rp 250 Juta & Pergeseran Budget.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto">
+                        <table class="w-full text-left text-xs min-w-[800px]">
+                            <thead class="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase">
+                                <tr>
+                                    <th class="p-4 font-bold w-1/4">Info Pengajuan</th>
+                                    <th class="p-4 font-bold">Nilai & Tujuan</th>
+                                    <th class="p-4 font-bold">Rekomendasi Analis</th>
+                                    <th class="p-4 font-bold text-right w-1/4">Aksi C-Suite</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800" id="approval-table-body">
+                                <tr id="row-req-204" class="hover:bg-slate-800/50 transition-colors">
+                                    <td class="p-4 align-top">
+                                        <div class="font-bold text-white text-sm mb-1">REQ-ADM-204</div>
+                                        <div class="text-slate-400">Oleh: VP IT / Dept: Teknologi</div>
+                                        <div class="text-[10px] text-slate-500 mt-1">Hari ini, 09:15 WIB</div>
+                                    </td>
+                                    <td class="p-4 align-top">
+                                        <div class="font-bold text-white text-sm mb-1 text-blue-400">Rp 450.000.000</div>
+                                        <div class="text-slate-400">Pembaruan Lisensi ERP & Server Cloud (PSAK 72 Ready).</div>
+                                    </td>
+                                    <td class="p-4 align-top">
+                                        <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] px-2 py-1 rounded mb-1 inline-block"><i class="fa-solid fa-thumbs-up mr-1"></i> Disarankan: Sesuai Budget IT</div>
+                                    </td>
+                                    <td class="p-4 align-top text-right space-y-2">
+                                        <button onclick="handleApproval('row-req-204', 'Disetujui')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded transition-colors">Setujui</button>
+                                        <div class="flex gap-2">
+                                            <button onclick="handleApproval('row-req-204', 'Ditolak')" class="w-full bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 border border-rose-500/30 font-bold py-1 rounded transition-colors">Tolak</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr id="row-req-205" class="hover:bg-slate-800/50 transition-colors bg-rose-900/10 border-l-2 border-l-rose-500">
+                                    <td class="p-4 align-top">
+                                        <div class="font-bold text-white text-sm mb-1">REQ-ADM-205</div>
+                                        <div class="text-slate-400">Oleh: VP Operations / Cabang Surabaya</div>
+                                        <div class="text-[10px] text-slate-500 mt-1">Kemarin, 16:40 WIB</div>
+                                    </td>
+                                    <td class="p-4 align-top">
+                                        <div class="font-bold text-white text-sm mb-1 text-blue-400">Rp 85.000.000</div>
+                                        <div class="text-slate-400">Tambahan Opex Pemeliharaan Mesin & Fasilitas.</div>
+                                    </td>
+                                    <td class="p-4 align-top">
+                                        <div class="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] px-2 py-1 rounded mb-1 inline-block"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Peringatan: Perlu Otorisasi C-Suite</div>
+                                        <div class="text-slate-500">Kategori Overbudget Cabang.</div>
+                                    </td>
+                                    <td class="p-4 align-top text-right space-y-2">
+                                        <button onclick="handleApproval('row-req-205', 'Disetujui')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded transition-colors">Setujui</button>
+                                        <div class="flex gap-2">
+                                            <button onclick="handleApproval('row-req-205', 'Ditolak')" class="w-full bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 border border-rose-500/30 font-bold py-1 rounded transition-colors">Tolak</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <!-- TAB: EXECUTIVE INTELLIGENCE CONTROL CENTER -->
+                <div id="tab-executive-intelligence" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-fuchsia-500/20 p-5 rounded-2xl flex flex-col xl:flex-row justify-between gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-brain text-fuchsia-400"></i> Executive Intelligence & Decision Support</h2>
+                            <p class="text-xs text-slate-400 mt-1">Pusat keputusan berbasis data ERP: profitabilitas, likuiditas, working capital, risiko, anggaran, people, aset, pajak, dan scenario planning.</p>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <select id="exec-period-select" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+                                <option value="MTD">MTD</option><option value="2026-09">September 2026</option><option value="2026-08">Agustus 2026</option>
+                            </select>
+                            <button onclick="refreshExecControlCenter()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-lg"><i class="fa-solid fa-rotate mr-1"></i>Refresh ERP</button>
+                            <button onclick="openExecutiveDecisionModal()" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-bold px-3 py-2 rounded-lg"><i class="fa-solid fa-gavel mr-1"></i>Catat Keputusan</button>
+                        </div>
+                    </div>
+
+                    <div id="exec-kpi-grid" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3"></div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <div class="flex justify-between items-center mb-4"><h3 class="text-sm font-bold text-white"><i class="fa-solid fa-triangle-exclamation text-rose-400 mr-2"></i>Decision Signals</h3><span id="exec-signal-count" class="text-[10px] text-slate-400"></span></div>
+                            <div id="exec-signals" class="space-y-2"></div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <h3 class="text-sm font-bold text-white mb-4"><i class="fa-solid fa-gauge-high text-emerald-400 mr-2"></i>Health Score</h3>
+                            <div id="exec-health" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <div class="flex justify-between items-center mb-4"><h3 class="text-sm font-bold text-white"><i class="fa-solid fa-chart-line text-indigo-400 mr-2"></i>Scenario Planning</h3><button onclick="saveSelectedScenario()" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-slate-300">Simpan Scenario</button></div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="exec-scenarios"></div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <h3 class="text-sm font-bold text-white mb-4"><i class="fa-solid fa-water text-sky-400 mr-2"></i>Cash / Working Capital</h3>
+                            <div class="grid grid-cols-2 gap-4" id="exec-cash-metrics"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><h3 class="text-sm font-bold text-white mb-3">Risiko Prioritas</h3><div id="exec-risks" class="space-y-2"></div></div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><h3 class="text-sm font-bold text-white mb-3">Top Customer Concentration</h3><div id="exec-customers" class="space-y-2"></div></div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><h3 class="text-sm font-bold text-white mb-3">Top Vendor Concentration</h3><div id="exec-vendors" class="space-y-2"></div></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><h3 class="text-sm font-bold text-white mb-3">Approval & Exception Queue</h3><div id="exec-approvals" class="overflow-auto max-h-72"></div></div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><h3 class="text-sm font-bold text-white mb-3">Executive Decisions History</h3><div id="exec-decisions" class="overflow-auto max-h-72"></div></div>
+                    </div>
+                </div>
+
+                <!-- EXECUTIVE DECISION MODAL -->
+                <div id="exec-decision-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[70] hidden items-center justify-center p-4">
+                    <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3"><h3 class="text-sm font-bold text-white"><i class="fa-solid fa-gavel text-fuchsia-400 mr-2"></i>Executive Decision Record</h3><button onclick="closeExecutiveDecisionModal()" class="text-slate-400 hover:text-white">✕</button></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            <input id="ed-title" class="bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white" placeholder="Judul keputusan">
+                            <select id="ed-category" class="bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"><option>STRATEGY</option><option>FINANCE</option><option>OPERATIONS</option><option>PEOPLE</option><option>RISK</option><option>INVESTMENT</option><option>GOVERNANCE</option></select>
+                            <select id="ed-priority" class="bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white"><option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select>
+                            <input id="ed-owner" class="bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white" placeholder="Owner / PIC">
+                            <input id="ed-deadline" type="date" class="bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white">
+                            <input id="ed-budget" type="number" class="bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white" placeholder="Dampak anggaran">
+                        </div>
+                        <textarea id="ed-decision" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white text-xs" placeholder="Keputusan yang diambil..."></textarea>
+                        <textarea id="ed-rationale" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white text-xs" placeholder="Rasional / evidence / asumsi..."></textarea>
+                        <textarea id="ed-impact" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white text-xs" placeholder="Expected impact / outcome"></textarea>
+                        <div class="flex justify-end gap-2"><button onclick="closeExecutiveDecisionModal()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs">Batal</button><button onclick="saveExecutiveDecisionRecord()" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold px-4 py-2 rounded-lg text-xs">Simpan Keputusan</button></div>
+                    </div>
+                </div>
+
+                <!-- TAB 12: DECISION CENTER (GOVERNANCE & ACTION PLAN) -->
+                <div id="tab-decision" class="tab-content hidden space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-lightbulb text-amber-400"></i> Executive Decision Center & Matrix Keputusan
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">Pusat penataan keputusan strategis direksi, mitigasi risiko SAK, dan tracking eksekusi.</p>
+                        </div>
+                        <button onclick="showToast('Rekomendasi AI', '2 Keputusan strategis mendesak perlu eksekusi minggu ini.', 'info')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded-lg text-white font-bold"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Generasi Matrix Keputusan</button>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Decision Item 1 -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                            <div class="flex justify-between items-start">
+                                <span class="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Prioritas 1: Kritis</span>
+                                <span class="text-[10px] text-slate-500 font-mono">DCN-2026-08</span>
+                            </div>
+                            <h3 class="text-sm font-bold text-white">Eksekusi Tindakan Hukum & CKPN Piutang > 90 Hari (PT Global Sentosa)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Piutang sebesar Rp 500 Juta telah melampaui 90 hari. Sesuai SAK PSAK 71, CKPN tambahan Rp 150 Juta diakui di Laba Rugi Q3 jika tidak ada pembayaran bertahap.
+                            </p>
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                                <div class="text-slate-400 font-semibold">Opsi Keputusan Direksi:</div>
+                                <div class="text-slate-300">1. Terbitkan Somasi Hukum Resmi & Bekukan Pengiriman Produk Baru.</div>
+                                <div class="text-slate-300">2. Restrukturisasi Jadwal Bayar dengan Jaminan Aset.</div>
+                            </div>
+                            <div class="flex gap-2 pt-2">
+                                <button onclick="showToast('Keputusan Diambil', 'Persetujuan Somasi Hukum diteruskan ke Tim Legal.', 'success')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3 py-2 rounded-lg flex-1">Setujui Somasi Hukum</button>
+                                <button onclick="showToast('Restrukturisasi Selected', 'Instruksi restrukturisasi dikirim ke VP Finance.', 'info')" class="bg-slate-800 text-slate-300 text-xs px-3 py-2 rounded-lg">Restrukturisasi</button>
+                            </div>
+                        </div>
+
+
+                        <!-- Decision Item 2 -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                            <div class="flex justify-between items-start">
+                                <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Prioritas 2: Tinggi</span>
+                                <span class="text-[10px] text-slate-500 font-mono">DCN-2026-09</span>
+                            </div>
+                            <h3 class="text-sm font-bold text-white">Persetujuan Pergeseran Budget Opex vs Pembekuan CapEx</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Merespons instruksi Super Admin mengenai pembekuan CapEx non-operasional, disarankan mengalihkan sebagian alokasi CapEx Gudang ke Opex Perbaikan Mesin Surabaya (Rp 85 Jt).
+                            </p>
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                                <div class="text-slate-400 font-semibold">Dampak Keuangan SAK:</div>
+                                <div class="text-slate-300">Menjaga kelancaran produksi Surabaya tanpa menambah liabilitas baru.</div>
+                            </div>
+                            <div class="flex gap-2 pt-2">
+                                <button onclick="showToast('Keputusan Diambil', 'Pergeseran Budget disetujui & dialokasikan ke ERP.', 'success')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-2 rounded-lg flex-1">Setujui Pergeseran Budget</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </main>
+    </div>
+
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Init Chart Variable
+        let mainChartInstance = null;
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initMainChart();
+            setupKeyboardShortcuts();
+        });
+
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(el => el.classList.add('hidden'));
+
+
+            const target = document.getElementById(tabId);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('block');
+            }
+
+
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active', 'bg-indigo-600/20', 'border-indigo-500/40', 'text-indigo-300');
+                btn.classList.add('bg-transparent', 'border-transparent', 'text-slate-400');
+            });
+
+
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-transparent', 'border-transparent', 'text-slate-400');
+                activeBtn.classList.add('active', 'bg-indigo-600/20', 'border-indigo-500/40', 'text-indigo-300');
+            }
+        }
+
+
+        // Sub-tab Switcher for PSAK
+        function showPsakSubtab(subId) {
+            const contents = document.querySelectorAll('.psak-sub-content');
+            contents.forEach(el => el.classList.add('hidden'));
+
+
+            const target = document.getElementById(subId);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('block');
+            }
+
+
+            const btns = document.querySelectorAll('.psak-sub-btn');
+            btns.forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'font-bold');
+                btn.classList.add('bg-slate-900', 'text-slate-300');
+            });
+
+
+            const activeBtn = document.getElementById('btn-sub-' + subId);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-900', 'text-slate-300');
+                activeBtn.classList.add('bg-indigo-600', 'text-white', 'font-bold');
+            }
+        }
+
+
+        // Initialize Main Chart.js
+        function initMainChart() {
+            const ctx = document.getElementById('mainChart');
+            if (!ctx) return;
+
+
+            mainChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags (SAK)'],
+                    datasets: [
+                        {
+                            label: 'Pendapatan (PSAK 72)',
+                            data: [1800, 1950, 2100, 2050, 2200, 2350, 2300, 2450],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Laba Bersih',
+                            data: [320, 360, 410, 390, 430, 460, 450, 480],
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Saldo Kas & Setara Kas',
+                            data: [1000, 1050, 1100, 1150, 1120, 1200, 1180, 1250],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'transparent',
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#1e293b' },
+                            ticks: { color: '#64748b' }
+                        },
+                        y: {
+                            grid: { color: '#1e293b' },
+                            ticks: { color: '#64748b' }
+                        }
+                    }
+                }
+            });
+        }
+
+
+        // Drawers Toggle
+        function toggleNotifDrawer() {
+            const drawer = document.getElementById('notif-drawer');
+            drawer.classList.toggle('translate-x-full');
+        }
+
+
+        function toggleAiDrawer() {
+            const drawer = document.getElementById('ai-drawer');
+            drawer.classList.toggle('translate-x-full');
+        }
+
+
+        // Filter Notifications
+        function filterNotifs(category) {
+            const items = document.querySelectorAll('.notif-item');
+            const btns = document.querySelectorAll('.notif-tab-btn');
+
+
+            btns.forEach(btn => btn.classList.replace('bg-indigo-600', 'bg-slate-800'));
+
+
+            const activeBtn = document.getElementById('notif-tab-' + category);
+            if (activeBtn) activeBtn.classList.replace('bg-slate-800', 'bg-indigo-600');
+
+
+            items.forEach(item => {
+                if (category === 'all' || item.classList.contains(category)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+
+        function clearAllNotifs() {
+            document.getElementById('notif-feed-body').innerHTML = '<div class="text-center text-slate-500 py-10">Tidak ada notifikasi baru.</div>';
+            document.getElementById('badge-total-notif').style.display = 'none';
+            document.getElementById('badge-sub-sidebar').style.display = 'none';
+            showToast('Notifikasi', 'Semua notifikasi telah ditandai dibaca.', 'info');
+        }
+
+
+        // Search Command Palette (Ctrl + K)
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    openSearch();
+                }
+                if (e.key === 'Escape') {
+                    closeSearch();
+                    closeDirectiveModal();
+                }
+            });
+        }
+
+
+        function openSearch() {
+            document.getElementById('search-modal').classList.remove('hidden');
+            document.getElementById('search-input').focus();
+        }
+
+
+        function closeSearch() {
+            document.getElementById('search-modal').classList.add('hidden');
+        }
+
+
+        function filterNavSearch() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const items = document.querySelectorAll('#search-results > div');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        }
+
+
+        // AI Copilot Logic
+        function askAiPrompt(promptText) {
+            const chatBody = document.getElementById('ai-chat-body');
+            chatBody.innerHTML += `
+                <div class="bg-indigo-600/20 border border-indigo-500/30 text-indigo-200 p-2.5 rounded-xl text-right my-2">
+                    ${promptText}
+                </div>
+                <div class="bg-slate-800 border border-slate-700 text-slate-200 p-3 rounded-2xl my-2 leading-relaxed">
+                    <i class="fa-solid fa-robot text-indigo-400 mr-1"></i> Analisis AI SAK Engine: Mengenai <b>"${promptText}"</b>, rasio posisi keuangan konsolidasi dan pencatatan berbasis SAK/PSAK Indonesia menunjukkan kestabilan tinggi. Disarankan melanjutkan penataan CKPN PSAK 71 dan penyelesaian audit pajak tangguhan.
+                </div>
+            `;
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+
+        function sendAiMessage() {
+            const input = document.getElementById('ai-chat-input');
+            if (!input.value.trim()) return;
+            askAiPrompt(input.value);
+            input.value = '';
+        }
+
+
+        // What-If Simulation Logic
+        function updateSimValues() {
+            const rev = document.getElementById('sim-rev').value;
+            const opex = document.getElementById('sim-opex').value;
+            document.getElementById('val-rev').innerText = (rev >= 0 ? '+' : '') + rev + '%';
+            document.getElementById('val-opex').innerText = (opex >= 0 ? '+' : '') + opex + '%';
+        }
+
+
+        function runSimulation() {
+            const rev = parseFloat(document.getElementById('sim-rev').value);
+            const opex = parseFloat(document.getElementById('sim-opex').value);
+            
+            const baseRev = 2450;
+            const baseOpex = 550;
+            const baseNet = 480;
+
+
+            const newRev = baseRev * (1 + rev/100);
+            const newOpex = baseOpex * (1 + opex/100);
+            const diffNet = (newRev - baseRev) - (newOpex - baseOpex);
+            const simNetVal = baseNet + diffNet;
+
+
+            document.getElementById('sim-net').innerText = 'Rp ' + simNetVal.toFixed(0) + ' Jt';
+            document.getElementById('sim-net-diff').innerText = 'Perubahan vs Base: ' + (diffNet >= 0 ? '+' : '') + diffNet.toFixed(0) + ' Jt';
+
+
+            if (simNetVal < 300) {
+                document.getElementById('sim-status').innerText = 'Waspada Tekanan Kas';
+                document.getElementById('sim-status').className = 'text-lg font-bold text-amber-400';
+            } else {
+                document.getElementById('sim-status').innerText = 'Sangat Sehat';
+                document.getElementById('sim-status').className = 'text-lg font-bold text-emerald-400';
+            }
+
+
+            showToast('Simulasi Berhasil', 'Proyeksi Laba SAK telah diperbarui secara parsial.', 'info');
+        }
+
+
+        // Approval Row Handler
+        function handleApproval(rowId, action) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+
+
+            if (action === 'Disetujui') {
+                row.className = 'bg-emerald-950/20 transition-all';
+                row.cells[3].innerHTML = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-check-circle mr-1"></i> Disetujui C-Suite</span>`;
+                showToast('Otorisasi Disetujui', 'Transaksi ' + rowId + ' berhasil disetujui & disinkronkan ke ERP.', 'success');
+            } else {
+                row.className = 'bg-rose-950/20 transition-all';
+                row.cells[3].innerHTML = `<span class="text-rose-400 font-bold"><i class="fa-solid fa-xmark-circle mr-1"></i> Ditolak</span>`;
+                showToast('Otorisasi Ditolak', 'Transaksi ' + rowId + ' ditolak oleh C-Suite.', 'warning');
+            }
+        }
+
+
+        // Modal Directive
+        function openSendDirectiveModal() {
+            document.getElementById('directive-modal').classList.remove('hidden');
+        }
+
+
+        function closeDirectiveModal() {
+            document.getElementById('directive-modal').classList.add('hidden');
+        }
+
+
+        function submitDirective() {
+            const recip = document.getElementById('dir-recipient').value;
+            const text = document.getElementById('dir-text').value;
+            if (!text) {
+                alert('Mohon isi pesan instruksi.');
+                return;
+            }
+            closeDirectiveModal();
+            showToast('Instruksi Terkirim', 'Instruksi berhasil dikirimkan ke ' + recip, 'success');
+            document.getElementById('dir-text').value = '';
+        }
+
+
+        function replySubordinate(name, message) {
+            openSendDirectiveModal();
+            document.getElementById('dir-recipient').value = name;
+            if (message) document.getElementById('dir-text').value = message;
+        }
+
+
+        // UI Helpers
+        function dismissBanner() {
+            document.getElementById('superadmin-banner').style.display = 'none';
+        }
+
+
+        function toggleBoardroomMode() {
+            document.body.classList.toggle('scale-95');
+            showToast('Boardroom Mode', 'Tampilan dipersonalisasi untuk Presentasi Direksi.', 'info');
+        }
+
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            sidebar.classList.toggle('hidden');
+        }
+
+
+        function exportPDF() {
+            window.print();
+        }
+
+
+        // Toast Engine
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+
+            let borderClass = 'border-indigo-500 bg-slate-900 text-indigo-300';
+            let icon = 'fa-info-circle';
+
+
+            if (type === 'success') {
+                borderClass = 'border-emerald-500 bg-slate-900 text-emerald-400';
+                icon = 'fa-check-circle';
+            } else if (type === 'warning') {
+                borderClass = 'border-amber-500 bg-slate-900 text-amber-400';
+                icon = 'fa-exclamation-triangle';
+            }
+
+
+            toast.className = `toast-enter p-3 rounded-xl border shadow-2xl flex items-start gap-3 w-80 pointer-events-auto ${borderClass}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-base mt-0.5"></i>
+                <div class="flex-1">
+                    <h4 class="text-xs font-bold text-white">${title}</h4>
+                    <p class="text-[11px] text-slate-300 leading-tight mt-0.5">${message}</p>
+                </div>
+            `;
+
+
+            container.appendChild(toast);
+
+
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+<script>
+/* ERP INTEGRATION BRIDGE v2 */
+window.ERPBridge = window.ERPBridge || (function(){
+  const KEY='erpSession';
+  function session(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+  function save(res){if(res&&res.token){localStorage.setItem(KEY,JSON.stringify({token:res.token,user:res.userData||res.user||{}}));} return res;}
+  function clear(){localStorage.removeItem(KEY);}
+  function call(action,payload,onSuccess,onError){
+    payload=payload||{}; const s=session();
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia. Buka URL Web App resmi.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Backend error'});}).apiCall(action,payload,s?s.token:'');
+  }
+  function bootstrap(page,onSuccess,onError){
+    const s=session();
+    if(!s||!s.token){onError&&onError({code:'NO_SESSION',message:'Sesi login tidak ditemukan.'});return;}
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Bootstrap gagal'});}).getIntegratedBootstrap(s.token,page||'');
+  }
+  return {session,save,clear,call,bootstrap};
+})();
+</script><script>
+(function(){
+  function money(n){n=Number(n||0);return 'Rp '+n.toLocaleString('id-ID');}
+  function boot(){ERPBridge.bootstrap('Manajemenpuncak',function(res){
+    window.__ERP_EXEC=res; const d=res.data||{};
+    const metricMap={revenueMtd:money(d.revenue),netProfitMargin:d.revenue?((d.netProfit/d.revenue)*100).toFixed(1)+' %':'0 %',cashBalance:money((d.saldoKas||0)+(d.saldoBank||0)),opexRatio:d.revenue?((d.expense/d.revenue)*100).toFixed(1)+' %':''}; document.getElementById('kpi-revenue')&&(document.getElementById('kpi-revenue').textContent=money(d.revenue)); document.getElementById('kpi-net-income')&&(document.getElementById('kpi-net-income').textContent=money(d.netProfit)); document.getElementById('kpi-net-income-trend')&&(document.getElementById('kpi-net-income-trend').querySelector('span').textContent='NPM '+(d.revenue?((d.netProfit/d.revenue)*100).toFixed(1):0)+'%'); document.getElementById('kpi-cash')&&(document.getElementById('kpi-cash').textContent=money((d.saldoKas||0)+(d.saldoBank||0))); document.getElementById('kpi-overdue')&&(document.getElementById('kpi-overdue').textContent=money(d.totalPiutang||0));
+    document.querySelectorAll('[data-erp-metric]').forEach(el=>{const k=el.getAttribute('data-erp-metric');if(metricMap[k]!=null)el.textContent=metricMap[k];});
+    if(mainChartInstance && d.revenue!=null){mainChartInstance.data.datasets[0].data=[d.revenue/1000000];mainChartInstance.data.datasets[1].data=[d.netProfit/1000000];mainChartInstance.data.datasets[2].data=[((d.saldoKas||0)+(d.saldoBank||0))/1000000];mainChartInstance.data.labels=['ERP MTD'];mainChartInstance.update();}
+  },function(e){showToast('ERP','Dashboard tidak tersinkron: '+e.message,'error');});}
+  window.addEventListener('DOMContentLoaded',boot,{once:true});
+  const _ha=window.handleApproval;
+  window.handleApproval=function(rowId,action){
+    const d=window.__ERP_EXEC&&window.__ERP_EXEC.data; const approvals=(d&&d.pendingApprovals)||[]; let a=approvals.find(x=>String(x.ApprovalID)===String(rowId)||String(x.RefID)===String(rowId)); if(!a && approvals.length){ const n=(parseInt(String(rowId).replace(/\D/g,''),10)||0); a=approvals[Math.max(0,Math.min(approvals.length-1,n%approvals.length))]; }
+    if(a){ERPBridge.call('handleExecutiveApproval',{id:a.ApprovalID,status:action==='Disetujui'?'APPROVED':'REJECTED',notes:'Keputusan Manajemen Puncak'},function(){showToast('ERP','Approval tersimpan ke ERP.','success');boot();},function(e){showToast('Approval gagal',e.message,'error');});} else if(_ha){_ha(rowId,action);}
+  };
+  const _sd=window.submitDirective;
+  window.submitDirective=function(){
+    const recip=document.getElementById('dir-recipient').value,text=document.getElementById('dir-text').value;if(!text)return alert('Mohon isi pesan instruksi.');
+    ERPBridge.call('sendDirective',{recipient:recip,message:text},function(){closeDirectiveModal();document.getElementById('dir-text').value='';showToast('ERP','Instruksi direkam dan dikirim ke workflow bawahan.','success');},function(e){showToast('Gagal',e.message,'error');});
+  };
+})();
+</script>
+<script>
+/* MANAJEMEN ERP SYNC v1 */
+(function(){
+  window.erpWorkspaceSync=function(silent){
+    ERPBridge.call('syncWorkspaceData',{},function(r){ window.__ERP_EXEC_SYNC=r&&r.data; if(!silent && typeof showToast==='function') showToast('Sinkronisasi ERP','Data terbaru berhasil diambil dari Google Sheet.','success'); if(typeof window.refreshData==='function') window.refreshData(); },function(e){ showToast&&showToast('Sync Gagal',e.message||'Gagal sinkronisasi','error'); });
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    const h=document.querySelector('header')||document.body;const b=document.createElement('button');b.type='button';b.textContent='↻ Sinkronisasi ERP';b.className='px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold ml-2';b.onclick=window.erpWorkspaceSync;h.appendChild(b);
+  },{once:true});
+})();
+</script>
+<script>
+/* EXECUTIVE INTERNAL CHAT CENTER v1 */
+(function(){
+  function ensureChat(){
+    if(document.getElementById('erpExecutiveChatPanel')) return;
+    const box=document.createElement('div');box.id='erpExecutiveChatPanel';
+    box.className='fixed bottom-5 right-5 z-[85] w-[360px] max-w-[calc(100vw-24px)] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden';
+    box.innerHTML=`<div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between"><div><div class="text-xs font-bold text-white">Internal Chat</div><div id="exChatTarget" class="text-[10px] text-slate-400">Semua pengguna</div></div><button onclick="document.getElementById('erpExecutiveChatPanel').classList.toggle('hidden')" class="text-slate-400">×</button></div><div id="exChatMessages" class="h-56 overflow-y-auto p-3 space-y-2"><div class="text-xs text-slate-500">Memuat komunikasi...</div></div><div class="p-3 border-t border-slate-700 flex gap-2"><input id="exChatInput" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="Tulis pesan..."><button id="exChatSend" class="bg-indigo-600 text-white px-3 rounded-xl text-xs font-bold">Kirim</button></div>`;
+    document.body.appendChild(box);
+    document.getElementById('exChatSend').onclick=function(){const i=document.getElementById('exChatInput');const text=(i.value||'').trim();if(!text)return;ERPBridge.call('sendInternalChat',{text:text,receiverId:'ALL',roleTarget:'ALL'},function(){i.value='';window.exChatRefresh();},function(e){showToast('Chat Gagal',e.message||'Gagal mengirim','error');});};
+  }
+  window.exChatRefresh=function(){ensureChat();ERPBridge.call('getCommunicationData',{},function(r){const arr=(r&&r.chats)||[];const el=document.getElementById('exChatMessages');el.innerHTML=arr.slice(-60).map(function(m){return `<div class="text-xs p-2 rounded-lg ${String(m.SenderID||m.senderId)==String((ERPBridge.session()||{}).user?.id||'')?'bg-indigo-600 text-white':'bg-slate-800 text-slate-200'}"><div>${String(m.Pesan||m.Text||'').replace(/[&<>]/g,'')}</div><div class="text-[9px] opacity-60 mt-1">${m.Pengirim||m.SenderName||''}</div></div>`;}).join('')||'<div class="text-xs text-slate-500">Belum ada pesan.</div>';},function(e){showToast('Chat','Gagal membaca chat: '+e.message,'error');});};
+  document.addEventListener('DOMContentLoaded',function(){ensureChat();exChatRefresh();},{once:true});
+})();
+</script>
+<script>
+/* ERP SMART SYNC v2 */
+(function(){
+  var lastData=null,lastComm=null,busyData=false,busyComm=false;
+  function poll(){
+    if(document.visibilityState!=='visible'||!window.ERPBridge) return;
+    ERPBridge.call('getSyncState',{},function(st){
+      if(!st)return;
+      var dv=String(st.dataVersion||''),cv=String(st.commVersion||'');
+      if(lastData===null){lastData=dv;lastComm=cv;return;}
+      var dataChanged=dv!==lastData,commChanged=cv!==lastComm;
+      lastData=dv;lastComm=cv;
+      if(commChanged&&!busyComm&&typeof window.erpChatRefresh==='function'){
+        busyComm=true;try{window.erpChatRefresh(true);}finally{setTimeout(function(){busyComm=false;},1000);}
+      }
+      if(dataChanged&&!busyData){
+        var fn=null;
+        if(typeof window.erpForceSync==='function') fn=window.erpForceSync;
+        else if(typeof window.erpAccountantSync==='function') fn=window.erpAccountantSync;
+        else if(typeof window.erpWorkspaceSync==='function') fn=window.erpWorkspaceSync;
+        else if(typeof window.refreshExecControlCenter==='function') fn=window.refreshExecControlCenter;
+        if(fn){busyData=true;try{fn(true);}finally{setTimeout(function(){busyData=false;},1800);}}
+      }
+    },function(){});
+  }
+  document.addEventListener('DOMContentLoaded',function(){poll();setInterval(poll,5000);},{once:true});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')poll();});
+})();
+</script>
+
+</body>
+</html>

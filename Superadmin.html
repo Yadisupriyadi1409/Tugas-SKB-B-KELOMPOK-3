@@ -1,0 +1,1271 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Control Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' } } } }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for better UI */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+  </style>
+</head>
+
+<body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen flex flex-col md:flex-row relative">
+<!-- ERP GLOBAL COMMUNICATION / MAINTENANCE -->
+<div id="erpGlobalNotice" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-[95] w-[min(92vw,900px)] px-4 py-3 rounded-2xl border border-indigo-400/30 bg-slate-900/95 backdrop-blur shadow-2xl">
+  <div class="flex items-start gap-3"><div class="text-xl">📢</div><div class="min-w-0 flex-1"><div id="erpGlobalNoticeTitle" class="font-bold text-sm text-white">Pengumuman Sistem</div><div id="erpGlobalNoticeText" class="text-xs text-slate-300 mt-1 whitespace-pre-line"></div></div><button type="button" onclick="closeErpNotice()" class="text-slate-400 hover:text-white">✕</button></div>
+</div>
+<div id="erpMaintenanceOverlay" class="hidden fixed inset-0 z-[90] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-6">
+  <div class="max-w-xl w-full bg-slate-900 border border-rose-500/30 rounded-3xl shadow-2xl p-8 text-center">
+    <div class="w-16 h-16 rounded-2xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-3xl mx-auto mb-5">🛠️</div>
+    <h2 class="text-2xl font-black text-white">Sistem Sedang Maintenance</h2>
+    <p id="erpMaintenanceText" class="text-sm text-slate-300 mt-3 leading-relaxed">Operasional sementara dikunci oleh Super Admin.</p>
+    <div class="mt-6 text-xs text-slate-500">Halaman akan memeriksa status sistem secara otomatis.</div>
+  </div>
+</div>
+
+
+
+
+
+  <!-- SIDEBAR -->
+  <aside class="w-full md:w-64 bg-slate-800 border-r border-slate-700/80 flex-shrink-0 flex flex-col justify-between z-20 h-screen overflow-y-auto hidden md:flex">
+    <div>
+      <div class="p-4 border-b border-slate-700/80 flex items-center justify-between sticky top-0 bg-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-indigo-500/30">SA</div>
+          <div>
+            <h1 class="font-extrabold text-sm tracking-wide text-white">SYSTEM CONTROL</h1>
+            <p class="text-[10px] text-indigo-400 font-mono font-semibold">SUPER ADMIN PANEL</p>
+          </div>
+        </div>
+      </div>
+
+
+
+
+      <nav class="p-3 space-y-1 text-xs font-medium">
+        <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white font-bold bg-indigo-600 transition">
+          <span>🏠</span> <span>Dashboard</span>
+        </button>
+       
+        <div class="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Multi-Tenant</div>
+        <button onclick="nav('companies')" id="nav-companies" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition">
+          <span>🏢</span> <span>Perusahaan</span>
+        </button>
+        <button onclick="nav('users')" id="nav-users" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition">
+          <span>👥</span> <span>Pengguna (Users)</span>
+        </button>
+        <button onclick="nav('chat')" id="nav-chat" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition"><span>💬</span> <span>Chat Internal</span></button>
+<button onclick="nav('modules')" id="nav-modules" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition">
+          <span>🧩</span> <span>Manajemen Modul</span>
+        </button>
+
+
+
+
+        <div class="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Keamanan & Sistem</div>
+        <button onclick="nav('monitoring')" id="nav-monitoring" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition">
+          <span>📊</span> <span>Monitoring Sistem</span>
+        </button>
+        <button onclick="nav('audit')" id="nav-audit" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition">
+          <span>📋</span> <span>Audit Log & Trail</span>
+        </button>
+
+
+
+
+        <div class="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Konfigurasi Data</div>
+        <button onclick="nav('notifications')" id="nav-notifications" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition">
+          <span>📢</span> <span>Broadcast Notifikasi</span>
+        </button>
+        <button onclick="nav('backup')" id="nav-backup" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition">
+          <span>💾</span> <span>Export & Backup</span>
+        </button>
+        <button onclick="nav('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition">
+          <span>⚙️</span> <span>Pengaturan Global</span>
+        </button>
+      </nav>
+    </div>
+  </aside>
+
+
+
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
+   
+    <!-- Loader Overlay -->
+    <div id="global-loader" class="absolute inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex flex-col items-center justify-center hidden">
+      <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <p class="mt-4 text-sm font-semibold text-indigo-300 animate-pulse">Berkomunikasi dengan Server...</p>
+    </div>
+
+
+
+
+    <!-- Fatal Error Overlay -->
+    <div id="fatal-error" class="absolute inset-0 bg-rose-950/95 backdrop-blur-md z-[60] flex flex-col items-center justify-center hidden p-6 text-center">
+      <span class="text-6xl mb-4">🚨</span>
+      <h2 class="text-2xl font-black text-white mb-2">Koneksi Server Terputus</h2>
+      <p class="text-rose-200 text-sm max-w-md">Aplikasi ini membutuhkan backend Google Apps Script. Mock data telah dinonaktifkan demi keamanan. Pastikan URL Valid.</p>
+    </div>
+
+
+
+
+    <!-- Top Bar -->
+    <header class="h-16 bg-slate-800/80 border-b border-slate-700/80 flex items-center justify-between px-4 sm:px-6 backdrop-blur flex-shrink-0 z-10">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden p-2 bg-slate-700 rounded text-white" onclick="alert('Navigasi mobile bisa ditambahkan menu collapse disini')">☰</button>
+        <h2 id="pageTitle" class="text-lg font-bold text-white tracking-wide">Dashboard Utama</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="refreshData()" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-semibold text-slate-200 transition shadow">
+          🔄 Sinkronisasi
+        </button>
+      </div>
+    </header>
+
+
+
+
+    <!-- Main Dynamic Content Views -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+
+
+
+
+      <!-- 1. DASHBOARD VIEW -->
+      <section id="view-dashboard" class="content-view space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl"></div>
+            <p class="text-xs font-medium text-slate-400">Total Perusahaan</p>
+            <h3 id="dashTotalCompanies" class="text-3xl font-black text-indigo-400 mt-1">0</h3>
+            <p class="text-[11px] text-slate-400 mt-3"><span class="text-emerald-400 font-bold" id="dashActiveCompanies">0</span> Aktif | <span class="text-rose-400 font-bold" id="dashInactiveCompanies">0</span> Suspended</p>
+          </div>
+          <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl"></div>
+            <p class="text-xs font-medium text-slate-400">Total Pengguna</p>
+            <h3 id="dashTotalUsers" class="text-3xl font-black text-emerald-400 mt-1">0</h3>
+            <p class="text-[11px] text-slate-400 mt-3"><span class="text-emerald-400 font-bold" id="dashActiveUsers">0</span> Aktif | <span class="text-rose-400 font-bold" id="dashBlockedUsers">0</span> Diblokir</p>
+          </div>
+          <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-rose-500/10 rounded-full blur-xl"></div>
+            <p class="text-xs font-medium text-slate-400">Persetujuan Akun</p>
+            <h3 id="dashPendingUsers" class="text-3xl font-black text-rose-400 mt-1">0</h3>
+            <p class="text-[11px] text-slate-400 mt-3">Menunggu Approve</p>
+          </div>
+          <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg relative overflow-hidden">
+             <div class="absolute -right-4 -top-4 w-24 h-24 bg-sky-500/10 rounded-full blur-xl"></div>
+            <p class="text-xs font-medium text-slate-400">Status Server</p>
+            <h3 id="dashServerStatus" class="text-2xl font-black text-sky-400 mt-1">Checking...</h3>
+            <p class="text-[11px] text-slate-400 mt-3">Google Apps Script</p>
+          </div>
+          <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl"></div>
+            <p class="text-xs font-medium text-slate-400">Audit Trail</p>
+            <h3 id="dashTotalLogs" class="text-3xl font-black text-amber-400 mt-1">0</h3>
+            <p class="text-[11px] text-slate-400 mt-3">Aktivitas tercatat</p>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- 2. PERUSAHAAN VIEW -->
+      <section id="view-companies" class="content-view hidden space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="font-bold text-lg text-white">Manajemen Entitas (Tenant)</h3>
+            <p class="text-xs text-slate-400">Kelola pendaftaran dan status akses klien.</p>
+          </div>
+          <button onclick="openModal('modal-company')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-lg text-xs transition whitespace-nowrap shadow-lg shadow-emerald-900/20">
+            ➕ Tambah Perusahaan
+          </button>
+        </div>
+
+
+
+
+        <div class="bg-slate-800 rounded-xl border border-slate-700 flex flex-col h-[65vh]">
+          <div class="p-4 border-b border-slate-700 flex flex-wrap gap-3">
+            <input type="text" id="searchCompanyInput" onkeyup="renderCompaniesTable()" placeholder="Cari Perusahaan..." class="bg-slate-900 border border-slate-600 px-3 py-1.5 rounded-lg text-xs w-full sm:w-64 focus:outline-none focus:border-indigo-500 text-white">
+          </div>
+          <div class="overflow-auto flex-1">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead class="bg-slate-900 text-xs uppercase text-slate-400 font-mono sticky top-0 z-10 shadow">
+                <tr>
+                  <th class="p-3">ID</th>
+                  <th class="p-3">Nama Perusahaan</th>
+                  <th class="p-3">Kontak</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="companyTableBody" class="divide-y divide-slate-700 text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- 3. PENGGUNA VIEW -->
+      <section id="view-users" class="content-view hidden space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="font-bold text-lg text-white">Pusat Kendali Pengguna</h3>
+            <p class="text-xs text-slate-400">Manajemen akun, reset password, persetujuan daftar (Approve/Reject).</p>
+          </div>
+          <button onclick="openUserModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-lg text-xs transition whitespace-nowrap shadow-lg shadow-indigo-900/20">
+            ➕ Registrasi User Baru
+          </button>
+        </div>
+
+
+
+
+        <div class="bg-slate-800 rounded-xl border border-slate-700 flex flex-col h-[65vh]">
+          <div class="p-4 border-b border-slate-700 flex flex-wrap gap-3">
+            <input type="text" id="searchUserInput" onkeyup="renderUsersTable()" placeholder="Cari nama/email..." class="bg-slate-900 border border-slate-600 px-3 py-1.5 rounded-lg text-xs w-full sm:w-64 text-white">
+            <select id="userCompanyFilter" onchange="renderUsersTable()" class="bg-slate-900 border border-slate-600 px-3 py-1.5 rounded-lg text-xs text-white">
+              <option value="ALL">Semua Perusahaan</option>
+            </select>
+          </div>
+          <div class="overflow-auto flex-1">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead class="bg-slate-900 text-xs uppercase text-slate-400 font-mono sticky top-0 z-10 shadow">
+                <tr>
+                  <th class="p-3">Pengguna</th>
+                  <th class="p-3">WhatsApp</th>
+                  <th class="p-3">Role & Perusahaan</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-right">Tindakan</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody" class="divide-y divide-slate-700 text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- 4. MANAJEMEN MODUL VIEW -->
+      <section id="view-modules" class="content-view hidden space-y-4">
+        <div class="mb-4">
+          <h3 class="font-bold text-lg text-white">Manajemen Akses Modul</h3>
+          <p class="text-xs text-slate-400">Aktifkan atau matikan fitur aplikasi (modul) per entitas perusahaan.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-slate-800 rounded-xl border border-slate-700 p-4 h-fit">
+            <label class="block text-xs font-semibold text-slate-400 mb-2">Pilih Perusahaan Target:</label>
+            <select id="moduleCompanySelect" onchange="loadCompanyModules()" class="w-full bg-slate-900 border border-slate-600 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500 mb-4">
+            </select>
+            <p class="text-[11px] text-slate-400">Pilih tenant di atas untuk melihat dan mengubah hak akses modul mereka.</p>
+          </div>
+          <div class="md:col-span-2 bg-slate-800 rounded-xl border border-slate-700 p-5 space-y-5">
+            <h4 class="font-bold text-sm text-indigo-300 border-b border-slate-700 pb-2">Daftar Modul Sistem</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="moduleTogglesContainer">
+              <p class="text-sm text-slate-500 italic">Pilih perusahaan terlebih dahulu.</p>
+            </div>
+            <div class="pt-4 border-t border-slate-700 mt-4 text-right hidden" id="moduleSaveBtnContainer">
+              <button onclick="saveCompanyModules()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-lg text-sm transition text-white">Simpan Konfigurasi Modul</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- 5. MONITORING VIEW -->
+      <section id="view-monitoring" class="content-view hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <div><h3 class="font-bold text-lg text-white">Monitoring Keandalan Sistem</h3></div>
+          <button onclick="checkSystemHealth()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg text-xs transition shadow">⚡ Ping Server</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center">
+            <div id="statusIcon-gas" class="text-4xl mb-3">🔄</div>
+            <h4 class="font-bold text-slate-200">Koneksi Backend (GAS)</h4>
+            <p id="statusText-gas" class="text-xs text-slate-400 mt-1">Memeriksa...</p>
+          </div>
+          <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center">
+            <div id="statusIcon-db" class="text-4xl mb-3">🔄</div>
+            <h4 class="font-bold text-slate-200">Akses Database (Sheet)</h4>
+            <p id="statusText-db" class="text-xs text-slate-400 mt-1">Memeriksa...</p>
+          </div>
+          <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center">
+            <div class="text-4xl mb-3 text-sky-400">⏱️</div>
+            <h4 class="font-bold text-slate-200">Latensi Respon</h4>
+            <p id="statusText-latency" class="text-lg font-black text-sky-400 mt-1">--- ms</p>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- 6. AUDIT LOG VIEW -->
+      <section id="view-audit" class="content-view hidden space-y-4">
+        <div><h3 class="font-bold text-lg text-white">System Audit Trail</h3></div>
+        <div class="bg-slate-800 rounded-xl border border-slate-700 flex flex-col h-[65vh]">
+          <div class="p-4 border-b border-slate-700 flex flex-wrap gap-3 bg-slate-800/80">
+            <input type="text" id="searchAuditInput" onkeyup="renderAuditTable()" placeholder="Cari aktivitas, aktor, perusahaan..." class="bg-slate-900 border border-slate-600 px-3 py-1.5 rounded-lg text-xs w-full sm:w-64 text-white">
+            <button onclick="refreshData()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs font-semibold text-white">🔄 Muat Ulang</button>
+          </div>
+          <div class="overflow-auto flex-1">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead class="bg-slate-900 text-xs uppercase text-slate-400 font-mono sticky top-0 z-10">
+                <tr><th class="p-3">Waktu (WIB)</th><th class="p-3">Aktor</th><th class="p-3">Aksi & Modul</th><th class="p-3 w-full">Keterangan / Detail</th></tr>
+              </thead>
+              <tbody id="auditTableBody" class="divide-y divide-slate-700 font-mono text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      
+<section id="view-chat" class="content-view hidden space-y-5 animate-fade-in">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div><h3 class="font-bold text-lg text-white">Chat Internal ERP</h3><p class="text-xs text-slate-400">Pesan disimpan di Google Sheet <b>Chats</b>. Pilih penerima berdasarkan pengguna atau role.</p></div>
+    <div id="erpChatStatus" class="text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">TERHUBUNG</div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div class="lg:col-span-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3">
+      <div class="flex gap-2"><select id="erpChatRoleFilter" onchange="erpChatRenderUsers()" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"><option value="ALL">Semua Role</option><option value="SUPER_ADMIN">Super Admin</option><option value="ADMIN_PERUSAHAAN">Admin Perusahaan</option><option value="AKUNTAN">Akuntan</option><option value="KASIR">Kasir</option><option value="MANAJEMEN_PUNCAK">Manajemen Puncak</option></select><button onclick="erpChatRefresh()" class="px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs">↻</button></div>
+      <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 cursor-pointer" onclick="erpChatSelect('ALL','ALL','Semua Pengguna')"><div class="font-bold text-xs text-indigo-200">📢 Semua Pengguna</div><div class="text-[10px] text-slate-400">Pesan internal umum</div></div>
+      <div id="erpChatUsers" class="space-y-2 max-h-[55vh] overflow-y-auto custom-scrollbar"></div>
+    </div>
+    <div class="lg:col-span-8 bg-slate-900/80 border border-slate-800 rounded-2xl min-h-[60vh] flex flex-col overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800"><div id="erpChatTargetTitle" class="font-bold text-sm text-white">Semua Pengguna</div><div id="erpChatTargetSub" class="text-[10px] text-slate-500">Broadcast internal</div></div>
+      <div id="erpChatMessages" class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-3"></div>
+      <form onsubmit="erpChatSend(event)" class="p-4 border-t border-slate-800 flex gap-2"><input id="erpChatInput" autocomplete="off" placeholder="Tulis pesan..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"><button class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold">Kirim</button></form>
+    </div>
+  </div>
+  <div id="erpBroadcastFeed" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4"><div class="font-bold text-sm text-white mb-3">Broadcast Super Admin</div><div id="erpBroadcastItems" class="space-y-2"></div></div>
+</section>
+
+
+      <!-- 7. BROADCAST NOTIFICATIONS -->
+      <section id="view-notifications" class="content-view hidden space-y-6">
+        <div><h3 class="font-bold text-lg text-white">Broadcast Pengumuman</h3></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-1 bg-slate-800 rounded-xl border border-slate-700 p-5 space-y-4">
+            <h4 class="font-bold text-sm text-indigo-300">Buat Pengumuman Baru</h4>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Judul Pengumuman</label>
+              <input type="text" id="notifTitle" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Isi Pesan</label>
+              <textarea id="notifMessage" rows="4" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Target Broadcast</label>
+              <select id="notifTarget" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500"></select><p class="text-[10px] text-slate-500 mt-1">Gunakan Global untuk menampilkan broadcast ke seluruh Admin, Akuntan, Kasir, dan Manajemen Puncak.</p>
+            </div>
+            <button onclick="sendBroadcast()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-sm transition mt-2">🚀 Kirim Broadcast</button>
+          </div>
+          <div class="lg:col-span-2 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-slate-700 font-bold text-sm text-white bg-slate-800/80">Riwayat Broadcast Aktif</div>
+            <div class="overflow-auto flex-1 p-4 space-y-3" id="broadcastListContainer"></div>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- 8. BACKUP & EXPORT -->
+      <section id="view-backup" class="content-view hidden space-y-6">
+        <div><h3 class="font-bold text-lg text-white">Export & Backup Database</h3></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3 text-center">
+            <div class="text-4xl">📦</div><h4 class="font-bold text-slate-200">Full Backup</h4><button onclick="downloadBackup('full')" class="mt-2 w-full bg-indigo-600 hover:bg-indigo-500 font-bold py-2 rounded-lg text-sm text-white transition">Unduh JSON</button>
+          </div>
+          <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3 text-center">
+            <div class="text-4xl">🏢</div><h4 class="font-bold text-slate-200">Data Perusahaan</h4><button onclick="downloadBackup('companies')" class="mt-2 w-full bg-slate-700 hover:bg-slate-600 font-bold py-2 rounded-lg text-sm text-white transition">Unduh CSV</button>
+          </div>
+          <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3 text-center">
+            <div class="text-4xl">👥</div><h4 class="font-bold text-slate-200">Data Pengguna</h4><button onclick="downloadBackup('users')" class="mt-2 w-full bg-slate-700 hover:bg-slate-600 font-bold py-2 rounded-lg text-sm text-white transition">Unduh CSV</button>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- 9. GLOBAL SETTINGS -->
+      <section id="view-settings" class="content-view hidden space-y-6">
+        <div><h3 class="font-bold text-lg text-white">Pengaturan Global Sistem</h3></div>
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-5 max-w-2xl">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div><label class="block text-xs font-semibold text-slate-400 mb-1">Nama Aplikasi</label><input type="text" id="settingAppName" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white"></div>
+            <div><label class="block text-xs font-semibold text-slate-400 mb-1">Timeout Sesi (Menit)</label><input type="number" id="settingTimeout" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white"></div>
+          </div>
+          <div class="p-4 bg-slate-900/80 rounded-lg border border-slate-700 space-y-3">
+            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="settingMaintenance" class="w-5 h-5 accent-amber-500 rounded bg-slate-800 border-slate-600"><span class="text-sm font-bold text-white">Aktifkan Maintenance Mode</span></label>
+            <div><label class="block text-xs font-semibold mb-1 text-slate-400">Pesan Maintenance:</label><textarea id="settingMaintMsg" rows="2" class="w-full bg-slate-800 border border-slate-600 p-2 rounded-lg text-sm text-slate-200"></textarea></div>
+          </div>
+          <button onclick="saveGlobalSettings()" class="w-full bg-emerald-600 hover:bg-emerald-500 font-bold py-2.5 rounded-lg text-sm transition text-white shadow-lg">💾 Simpan Pengaturan Global</button>
+        </div>
+      </section>
+
+
+
+
+    </div>
+  </main>
+
+
+
+
+  <!-- ================= MODALS & COMPONENTS ================= -->
+
+
+
+
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[70] flex flex-col gap-2"></div>
+
+
+
+
+  <!-- Custom Confirm Modal -->
+  <div id="custom-confirm" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-sm w-full p-5 space-y-4" id="confirm-box">
+      <h3 id="confirm-title" class="text-lg font-bold text-white">Konfirmasi</h3>
+      <p id="confirm-msg" class="text-sm text-slate-300">Apakah Anda yakin?</p>
+      <div class="flex justify-end gap-3 pt-2">
+        <button id="confirm-btn-cancel" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition text-white">Batal</button>
+        <button id="confirm-btn-ok" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-bold transition text-white">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- Modal Form Company -->
+  <div id="modal-company" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+      <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+        <h3 class="font-bold text-white" id="compModalTitle">Tambah Perusahaan</h3>
+        <button onclick="closeModal('modal-company')" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+      <div class="p-5 space-y-4">
+        <input type="hidden" id="compId">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Perusahaan</label>
+          <input type="text" id="compName" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Kontak Telp/Email Utama</label>
+          <input type="text" id="compContact" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+      <div class="p-4 border-t border-slate-700 flex justify-end gap-3 bg-slate-800/50">
+        <button onclick="closeModal('modal-company')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium text-white transition">Batal</button>
+        <button onclick="saveCompany()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-lg text-sm text-white transition">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- Modal Form User (Updated Roles & Password) -->
+  <div id="modal-user" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+      <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+        <h3 class="font-bold text-white" id="userModalTitle">Form Pengguna</h3>
+        <button onclick="closeModal('modal-user')" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+      <div class="p-5 space-y-3">
+        <input type="hidden" id="userMode" value="add">
+        <input type="hidden" id="userOriginalEmail">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Lengkap</label>
+          <input type="text" id="userName" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Email (Unik)</label>
+          <input type="email" id="userEmail" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Nomor WhatsApp</label>
+          <input type="text" id="userWA" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="62812345678">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Kata Sandi (Password)</label>
+          <input type="text" id="userPassword" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Masukkan password awal...">
+          <p class="text-[10px] text-slate-500 mt-1" id="userPasswordHint">Abaikan jika tidak ingin mengubah sandi saat mengedit.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Role Akun</label>
+            <select id="userRole" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+              <option value="SUPER_ADMIN">Super Admin</option>
+              <option value="MANAJEMEN_PUNCAK">Manajemen Puncak</option>
+              <option value="ADMIN_PERUSAHAAN">Admin Perusahaan</option>
+              <option value="AKUNTAN">Akuntan</option>
+              <option value="KASIR">Kasir</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Perusahaan</label>
+            <select id="userCompanySelect" class="w-full bg-slate-900 border border-slate-600 p-2 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+              <!-- Populated -->
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-slate-700 flex justify-end gap-3 bg-slate-800/50">
+        <button onclick="closeModal('modal-user')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium text-white transition">Batal</button>
+        <button onclick="saveUser()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-lg text-sm text-white transition">Simpan Data</button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- CLIENT-SIDE SCRIPT LOGIC -->
+  <script>
+    // --- STATE MANAGEMENT ---
+    let state = {
+      companies: [], users: [], logs: [], modules: [], notifications: [], settings: {}
+    };
+    let confirmCb = null;
+
+
+
+
+    const AVAILABLE_MODULES = [
+      { id: 'MOD_AKUNTANSI', name: 'General Ledger & Akuntansi', desc: 'Jurnal, Buku Besar, Laba Rugi' },
+      { id: 'MOD_INVENTORY', name: 'Manajemen Persediaan', desc: 'Stok barang, Gudang, SO/PO' },
+      { id: 'MOD_PAYROLL', name: 'Payroll & HR', desc: 'Gaji, Absensi, PPh 21' },
+      { id: 'MOD_CRM', name: 'Customer Rel. (CRM)', desc: 'Leads, Invoicing Klien, Tiket' }
+    ];
+
+
+
+
+    // --- UTILITIES ---
+    function showLoader() { document.getElementById('global-loader').classList.remove('hidden'); }
+    function hideLoader() { document.getElementById('global-loader').classList.add('hidden'); }
+   
+    function checkGasContext() {
+      if (typeof google === 'undefined' || !google.script) {
+        document.getElementById('fatal-error').classList.remove('hidden');
+        return false;
+      }
+      return true;
+    }
+
+
+
+
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-900/90 border-emerald-600',
+        error: 'bg-rose-900/90 border-rose-600',
+        warning: 'bg-amber-900/90 border-amber-600',
+        info: 'bg-sky-900/90 border-sky-600'
+      };
+      toast.className = `px-4 py-3 rounded-lg shadow-xl border ${colors[type]} text-white text-sm font-semibold mb-2`;
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+
+
+
+    function confirmAction(title, msg, callback) {
+      document.getElementById('confirm-title').innerText = title;
+      document.getElementById('confirm-msg').innerText = msg;
+      confirmCb = callback;
+      document.getElementById('custom-confirm').classList.remove('hidden');
+    }
+    document.getElementById('confirm-btn-cancel').onclick = () => document.getElementById('custom-confirm').classList.add('hidden');
+    document.getElementById('confirm-btn-ok').onclick = () => { if(confirmCb) confirmCb(); document.getElementById('custom-confirm').classList.add('hidden'); };
+
+
+
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+
+
+
+    // --- NAVIGATION ---
+    function nav(viewId) {
+      document.querySelectorAll('.content-view').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('bg-indigo-600', 'text-white', 'font-bold');
+        el.classList.add('text-slate-300');
+      });
+      document.getElementById(`view-${viewId}`).classList.remove('hidden');
+      document.getElementById(`nav-${viewId}`).classList.add('bg-indigo-600', 'text-white', 'font-bold');
+     
+      const titles = { 'dashboard':'Dashboard', 'companies':'Entitas', 'users':'Pengguna', 'modules':'Modul', 'monitoring':'Sistem', 'audit':'Audit Trail', 'notifications':'Broadcast', 'chat':'Chat Internal', 'backup':'Backup', 'settings':'Pengaturan' };
+      document.getElementById('pageTitle').innerText = titles[viewId] || 'Panel';
+
+
+
+
+      if(viewId === 'modules') populateModuleSelect();
+      if(viewId === 'monitoring') checkSystemHealth();
+      if(viewId === 'chat') erpRefreshCommunication();
+    }
+
+
+
+
+    // --- CORE FETCH ---
+    function refreshData() {
+      if(!checkGasContext()) return;
+      showLoader();
+      google.script.run
+        .withSuccessHandler(res => {
+          state = res;
+          updateDashboard();
+          populateDropdowns();
+          renderCompaniesTable();
+          renderUsersTable();
+          renderAuditTable();
+          renderNotifications();
+          populateSettings();
+          hideLoader();
+          showToast('Data berhasil disinkronisasi', 'success');
+        })
+        .withFailureHandler(err => { hideLoader(); showToast("Koneksi gagal: " + err.message, 'error'); })
+        .getAllData();
+    }
+
+
+
+
+    function updateDashboard() {
+      document.getElementById('dashTotalCompanies').innerText = state.companies.length;
+      document.getElementById('dashActiveCompanies').innerText = state.companies.filter(c => c.Status === 'AKTIF').length;
+      document.getElementById('dashInactiveCompanies').innerText = state.companies.filter(c => c.Status === 'SUSPENDED').length;
+     
+      document.getElementById('dashTotalUsers').innerText = state.users.length;
+      document.getElementById('dashActiveUsers').innerText = state.users.filter(u => u.Status === 'AKTIF').length;
+      document.getElementById('dashBlockedUsers').innerText = state.users.filter(u => u.Status === 'BLOKIR').length;
+     
+      // Update data PENDING
+      const pendingCount = state.users.filter(u => u.Status === 'MENUNGGU').length;
+      document.getElementById('dashPendingUsers').innerText = pendingCount;
+
+
+
+
+      document.getElementById('dashTotalLogs').innerText = state.logs.length;
+    }
+
+
+
+
+    function populateDropdowns() {
+      let opts = '<option value="ALL">Semua Perusahaan</option>';
+      let justOpts = '';
+      state.companies.forEach(c => {
+        const o = `<option value="${c.CompanyID}">${c.CompanyID} - ${c.CompanyName}</option>`;
+        opts += o; justOpts += o;
+      });
+      document.getElementById('userCompanyFilter').innerHTML = opts;
+      document.getElementById('userCompanySelect').innerHTML = justOpts;
+      document.getElementById('notifTarget').innerHTML = '<option value="ALL">Semua Perusahaan (Global)</option>' + justOpts;
+    }
+
+
+
+
+    // --- COMPANIES ---
+    function renderCompaniesTable() {
+      const q = document.getElementById('searchCompanyInput').value.toLowerCase();
+      const tbody = document.getElementById('companyTableBody');
+      const filtered = state.companies.filter(c => (c.CompanyName||'').toLowerCase().includes(q) || (c.CompanyID||'').toLowerCase().includes(q));
+     
+      tbody.innerHTML = filtered.map(c => `
+        <tr class="hover:bg-slate-800/50">
+          <td class="p-3 font-mono font-bold text-slate-300">${c.CompanyID}</td>
+          <td class="p-3 font-semibold text-indigo-300">${c.CompanyName}</td>
+          <td class="p-3 text-slate-400">${c.Contact || '-'}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded font-bold text-[10px] ${c.Status === 'AKTIF' ? 'bg-emerald-900 text-emerald-300' : 'bg-rose-900 text-rose-300'}">${c.Status}</span>
+          </td>
+          <td class="p-3 text-right space-x-1">
+            <button onclick="editCompany('${c.CompanyID}')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs">Edit</button>
+            <button onclick="toggleCompanyStatus('${c.CompanyID}', '${c.Status}')" class="px-2 py-1 ${c.Status==='AKTIF'?'bg-amber-700 hover:bg-amber-600':'bg-emerald-700 hover:bg-emerald-600'} text-white rounded text-xs">${c.Status==='AKTIF'?'Suspend':'Aktifkan'}</button>
+            <button onclick="deleteCompany('${c.CompanyID}')" class="px-2 py-1 bg-rose-700 hover:bg-rose-600 text-white rounded text-xs">Hapus</button>
+          </td>
+        </tr>
+      `).join('') || `<tr><td colspan="5" class="p-3 text-center text-slate-500">Kosong</td></tr>`;
+    }
+
+
+
+
+    function saveCompany() {
+      const id = document.getElementById('compId').value;
+      const name = document.getElementById('compName').value;
+      const contact = document.getElementById('compContact').value;
+      if(!name) return showToast('Nama wajib diisi', 'error');
+
+
+
+
+      showLoader();
+      google.script.run.withSuccessHandler(() => { closeModal('modal-company'); refreshData(); }).withFailureHandler(e => {hideLoader(); showToast(e.message,'error')})
+      .saveCompanyRecord(id, name, contact);
+    }
+
+
+
+
+    function editCompany(id) {
+      const c = state.companies.find(x => x.CompanyID === id);
+      if(!c) return;
+      document.getElementById('compId').value = c.CompanyID;
+      document.getElementById('compName').value = c.CompanyName;
+      document.getElementById('compContact').value = c.Contact;
+      document.getElementById('compModalTitle').innerText = 'Edit Perusahaan';
+      openModal('modal-company');
+    }
+   
+    function toggleCompanyStatus(id, curr) {
+      const next = curr === 'AKTIF' ? 'SUSPENDED' : 'AKTIF';
+      confirmAction('Ubah Status', `Ubah status menjadi ${next}?`, () => {
+        showLoader();
+        google.script.run.withSuccessHandler(refreshData).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).changeCompanyStatus(id, next);
+      });
+    }
+
+
+
+
+    function deleteCompany(id) {
+      confirmAction('Hapus Perusahaan', `Hapus permanen ${id}? (Data terkait mungkin hilang)`, () => {
+        showLoader();
+        google.script.run.withSuccessHandler(refreshData).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).deleteCompanyRecord(id);
+      });
+    }
+
+
+
+
+    // --- USERS ---
+    function renderUsersTable() {
+      const q = document.getElementById('searchUserInput').value.toLowerCase();
+      const comp = document.getElementById('userCompanyFilter').value;
+      const tbody = document.getElementById('userTableBody');
+     
+      const filtered = state.users.filter(u => {
+        return ((u.Name||'').toLowerCase().includes(q) || (u.Email||'').toLowerCase().includes(q) || (u.WhatsApp||'').includes(q)) &&
+               (comp === 'ALL' || u.CompanyID === comp);
+      });
+
+
+
+
+      tbody.innerHTML = filtered.map(u => {
+        // Logika untuk status badge
+        let statusBadge = '';
+        if (u.Status === 'AKTIF') statusBadge = 'bg-emerald-900 text-emerald-300';
+        else if (u.Status === 'MENUNGGU') statusBadge = 'bg-amber-600 text-amber-100 animate-pulse';
+        else if (u.Status === 'SUSPENDED') statusBadge = 'bg-amber-900 text-amber-300';
+        else statusBadge = 'bg-rose-900 text-rose-300';
+
+
+
+
+        // Logika untuk tombol aksi (Approve/Reject atau Normal)
+        let actionButtons = '';
+        if (u.Status === 'MENUNGGU') {
+          actionButtons = `
+            <button onclick="approveUser('${u.Email}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 font-bold text-white rounded text-xs shadow-lg">✅ Approve</button>
+            <button onclick="rejectUser('${u.Email}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-500 font-bold text-white rounded text-xs shadow-lg">❌ Reject</button>
+          `;
+        } else {
+          actionButtons = `
+            <button onclick="editUser('${u.Email}')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs">Edit</button>
+            <button onclick="resetUserPassword('${u.Email}')" class="px-2 py-1 bg-sky-700 hover:bg-sky-600 text-white rounded text-xs font-semibold" title="Kirim password baru via Email">Reset Sandi</button>
+            <select onchange="changeUserStatus('${u.Email}', this.value)" class="px-2 py-1 bg-slate-900 border border-slate-600 text-white rounded text-xs focus:outline-none">
+              <option value="">Status...</option>
+              <option value="AKTIF">Aktifkan</option>
+              <option value="SUSPENDED">Suspend</option>
+              <option value="BLOKIR">Blokir</option>
+            </select>
+            <button onclick="deleteUser('${u.Email}')" class="px-2 py-1 bg-rose-700 hover:bg-rose-600 text-white rounded text-xs">Hapus</button>
+          `;
+        }
+
+
+
+
+        return `
+        <tr class="hover:bg-slate-800/50">
+          <td class="p-3">
+            <div class="font-bold text-slate-200">${u.Name}</div>
+            <div class="font-mono text-slate-400 text-[11px]">${u.Email}</div>
+          </td>
+          <td class="p-3 text-slate-300 text-xs">${u.WhatsApp || '-'}</td>
+          <td class="p-3">
+             <div class="text-xs font-semibold text-indigo-300">${u.Role.replace('_', ' ')}</div>
+             <div class="font-mono text-[10px] text-slate-500">${u.CompanyID}</div>
+          </td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded font-bold text-[10px] ${statusBadge}">${u.Status}</span>
+          </td>
+          <td class="p-3 text-right space-x-1">
+            ${actionButtons}
+          </td>
+        </tr>
+      `}).join('') || `<tr><td colspan="5" class="p-3 text-center text-slate-500">Kosong</td></tr>`;
+    }
+
+
+
+
+    function openUserModal(email = null) {
+      if(!email) {
+        document.getElementById('userMode').value = 'add';
+        document.getElementById('userOriginalEmail').value = '';
+        document.getElementById('userName').value = '';
+        document.getElementById('userEmail').value = '';
+        document.getElementById('userWA').value = '';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userPassword').placeholder = 'Masukkan password baru (Wajib)';
+        document.getElementById('userModalTitle').innerText = 'Registrasi Pengguna Baru';
+      } else {
+        const u = state.users.find(x => x.Email === email);
+        document.getElementById('userMode').value = 'edit';
+        document.getElementById('userOriginalEmail').value = u.Email;
+        document.getElementById('userName').value = u.Name;
+        document.getElementById('userEmail').value = u.Email;
+        document.getElementById('userWA').value = u.WhatsApp || '';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userPassword').placeholder = '(Kosongkan jika tidak diubah)';
+        document.getElementById('userRole').value = u.Role;
+        document.getElementById('userCompanySelect').value = u.CompanyID;
+        document.getElementById('userModalTitle').innerText = 'Edit Pengguna';
+      }
+      openModal('modal-user');
+    }
+    window.editUser = openUserModal; // alias
+
+
+
+
+    function saveUser() {
+      const mode = document.getElementById('userMode').value;
+      const origEmail = document.getElementById('userOriginalEmail').value;
+      const data = {
+        name: document.getElementById('userName').value,
+        email: document.getElementById('userEmail').value,
+        wa: document.getElementById('userWA').value,
+        role: document.getElementById('userRole').value,
+        comp: document.getElementById('userCompanySelect').value,
+        password: document.getElementById('userPassword').value
+      };
+     
+      if(!data.name || !data.email) return showToast('Nama dan Email wajib!', 'error');
+      if(mode === 'add' && !data.password) return showToast('Password wajib diisi untuk user baru!', 'error');
+
+
+
+
+      showLoader();
+      google.script.run.withSuccessHandler(()=>{closeModal('modal-user'); refreshData();}).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')})
+      .saveUserRecord(mode, origEmail, data);
+    }
+
+
+
+
+    // New Functions for Approvals & Passwords
+    function approveUser(email) {
+      confirmAction('Approve Akun', `Terima pendaftaran akun ${email}?`, () => {
+        showLoader();
+        google.script.run.withSuccessHandler(refreshData).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).changeUserStatus(email, 'AKTIF');
+      });
+    }
+
+
+
+
+    function rejectUser(email) {
+      confirmAction('Tolak Akun', `Tolak dan hapus data pendaftaran ${email}?`, () => {
+        showLoader();
+        google.script.run.withSuccessHandler(refreshData).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).deleteUserRecord(email);
+      });
+    }
+   
+    function resetUserPassword(email) {
+      confirmAction('Reset Kata Sandi', `Sistem akan menggenerate password baru dan mengirimkan notifikasi ke email ${email}. Lanjutkan?`, () => {
+        showLoader();
+        // Memanggil fungsi script yang bertanggung jawab generate password & kirim email
+        google.script.run
+          .withSuccessHandler(() => { hideLoader(); showToast('Password baru berhasil dikirim via Email.', 'success'); })
+          .withFailureHandler(e=>{hideLoader();showToast(e.message,'error')})
+          .triggerPasswordReset(email);
+      });
+    }
+
+
+
+
+    function changeUserStatus(email, status) {
+      if(!status) return;
+      confirmAction('Ubah Status User', `Set status ${email} menjadi ${status}?`, () => {
+        showLoader();
+        google.script.run.withSuccessHandler(refreshData).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).changeUserStatus(email, status);
+      });
+    }
+
+
+
+
+    function deleteUser(email) {
+      confirmAction('Hapus User', `Hapus permanen akun ${email}?`, () => {
+        showLoader();
+        google.script.run.withSuccessHandler(refreshData).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).deleteUserRecord(email);
+      });
+    }
+
+
+
+
+    // --- MODULES ---
+    function populateModuleSelect() {
+      const sel = document.getElementById('moduleCompanySelect');
+      sel.innerHTML = '<option value="">-- Pilih Perusahaan --</option>' + state.companies.map(c => `<option value="${c.CompanyID}">${c.CompanyID} - ${c.CompanyName}</option>`).join('');
+      document.getElementById('moduleTogglesContainer').innerHTML = '<p class="text-sm text-slate-500 italic">Pilih perusahaan terlebih dahulu.</p>';
+      document.getElementById('moduleSaveBtnContainer').classList.add('hidden');
+    }
+
+
+
+
+    function loadCompanyModules() {
+      const compId = document.getElementById('moduleCompanySelect').value;
+      const container = document.getElementById('moduleTogglesContainer');
+      const btn = document.getElementById('moduleSaveBtnContainer');
+      if(!compId) { container.innerHTML = ''; btn.classList.add('hidden'); return; }
+
+
+
+
+      const activeMods = state.modules.filter(m => m.CompanyID === compId).map(m => m.ModuleID);
+
+
+
+
+      container.innerHTML = AVAILABLE_MODULES.map(mod => `
+        <div class="flex items-center justify-between p-3 bg-slate-900 border border-slate-700 rounded-lg">
+          <div>
+            <p class="font-bold text-sm text-slate-200">${mod.name}</p>
+            <p class="text-[10px] text-slate-400">${mod.desc}</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" class="sr-only peer mod-checkbox" value="${mod.id}" ${activeMods.includes(mod.id) ? 'checked' : ''}>
+            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+          </label>
+        </div>
+      `).join('');
+      btn.classList.remove('hidden');
+    }
+
+
+
+
+    function saveCompanyModules() {
+      const compId = document.getElementById('moduleCompanySelect').value;
+      if(!compId) return;
+      const checks = document.querySelectorAll('.mod-checkbox');
+      const selected = Array.from(checks).filter(c => c.checked).map(c => c.value);
+
+
+
+
+      showLoader();
+      google.script.run.withSuccessHandler(()=>{refreshData(); showToast('Modul disimpan');}).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')})
+      .saveModules(compId, selected);
+    }
+
+
+
+
+    // --- MONITORING ---
+    function checkSystemHealth() {
+      if(!checkGasContext()) return;
+      const btnDb = document.getElementById('statusText-db');
+      const btnGas = document.getElementById('statusText-gas');
+      const lat = document.getElementById('statusText-latency');
+      const stServer = document.getElementById('dashServerStatus');
+
+
+
+
+      btnDb.innerText = btnGas.innerText = "Memeriksa...";
+      document.getElementById('statusIcon-db').innerText = document.getElementById('statusIcon-gas').innerText = "🔄";
+     
+      const start = Date.now();
+      google.script.run
+        .withSuccessHandler(res => {
+          const ms = Date.now() - start;
+          lat.innerText = `${ms} ms`;
+          if(res.status === 'ok') {
+            btnGas.innerText = "Tersambung (Online)"; document.getElementById('statusIcon-gas').innerText = "✅";
+            btnDb.innerText = "Read/Write OK"; document.getElementById('statusIcon-db').innerText = "✅";
+            stServer.innerText = "OPTIMAL"; stServer.className = "text-2xl font-black text-emerald-400 mt-1";
+          }
+        })
+        .withFailureHandler(e => {
+          lat.innerText = "Timeout";
+          btnGas.innerText = "Gagal (Error)"; document.getElementById('statusIcon-gas').innerText = "❌";
+          btnDb.innerText = "Akses Ditolak/Hilang"; document.getElementById('statusIcon-db').innerText = "❌";
+          stServer.innerText = "TERPUTUS"; stServer.className = "text-2xl font-black text-rose-400 mt-1";
+          showToast("Gagal ping server: " + e.message, 'error');
+        })
+        .pingSystem();
+    }
+
+
+
+
+    // --- AUDIT TRAIL ---
+    function renderAuditTable() {
+      const q = document.getElementById('searchAuditInput').value.toLowerCase();
+      const tbody = document.getElementById('auditTableBody');
+      const filtered = state.logs.filter(l => Object.values(l).some(v => String(v).toLowerCase().includes(q)));
+     
+      tbody.innerHTML = filtered.map(l => `
+        <tr class="hover:bg-slate-800/50">
+          <td class="p-3 text-[11px] text-slate-400 whitespace-nowrap">${l.Timestamp}</td>
+          <td class="p-3 font-semibold text-indigo-300">${l.Actor}</td>
+          <td class="p-3">
+             <span class="bg-slate-700 px-2 py-0.5 rounded text-[10px] mr-1 text-white">${l.CompanyID}</span>
+             <span class="text-xs text-slate-200">${l.Action}</span>
+          </td>
+          <td class="p-3 text-slate-400 text-xs break-all whitespace-normal w-full">${l.Details}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="4" class="p-3 text-center text-slate-500">Tidak ada log</td></tr>`;
+    }
+
+
+
+
+    // --- NOTIFICATIONS ---
+    function renderNotifications() {
+      const cont = document.getElementById('broadcastListContainer');
+      cont.innerHTML = state.notifications.map(n => `
+        <div class="p-3 bg-slate-900 border border-slate-700 rounded-lg flex justify-between items-start gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 bg-indigo-900 text-indigo-200 text-[10px] rounded font-bold">${n.Target}</span>
+              <span class="text-[10px] text-slate-500">${n.Date}</span>
+            </div>
+            <h5 class="font-bold text-slate-200 mt-1 text-sm">${n.Title}</h5>
+            <p class="text-xs text-slate-400 mt-1">${n.Message}</p>
+          </div>
+          <button onclick="deleteBroadcast('${n.ID}')" class="text-rose-400 hover:text-rose-300 text-xs font-bold shrink-0">Hapus</button>
+        </div>
+      `).join('') || '<p class="text-xs text-slate-500">Belum ada broadcast aktif.</p>';
+    }
+
+
+
+
+    function sendBroadcast() {
+      const title = document.getElementById('notifTitle').value;
+      const msg = document.getElementById('notifMessage').value;
+      const target = document.getElementById('notifTarget').value;
+      if(!title || !msg) return showToast('Judul dan pesan wajib!', 'error');
+
+
+
+
+      showLoader();
+      google.script.run.withSuccessHandler(()=>{
+        document.getElementById('notifTitle').value = '';
+        document.getElementById('notifMessage').value = '';
+        refreshData();
+      }).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')})
+      .addBroadcast(title, msg, target);
+    }
+    function deleteBroadcast(id) {
+       showLoader();
+       google.script.run.withSuccessHandler(refreshData).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).deleteBroadcast(id);
+    }
+
+
+
+
+    // --- SETTINGS & BACKUP ---
+    function populateSettings() {
+      const getSet = (k) => { const s = state.settings.find(x=>x.Key===k); return s ? s.Value : ''; };
+      document.getElementById('settingAppName').value = getSet('AppName') || 'Sistem Akuntansi Master';
+      document.getElementById('settingTimeout').value = getSet('SessionTimeout') || '120';
+      document.getElementById('settingMaintenance').checked = getSet('MAINTENANCE_MODE') === 'TRUE' || getSet('MaintenanceMode') === 'TRUE';
+      document.getElementById('settingMaintMsg').value = getSet('BROADCAST_MSG') || getSet('MaintenanceMsg') || 'Sistem sedang pemeliharaan rutin.';
+    }
+
+
+
+
+    function saveGlobalSettings() {
+      const on=document.getElementById('settingMaintenance').checked;
+      const msg=document.getElementById('settingMaintMsg').value.trim();
+      showLoader();
+      google.script.run.withSuccessHandler(()=>{
+        google.script.run.withSuccessHandler(()=>{refreshData();erpRefreshCommunication();showToast('Pengaturan global dan maintenance tersimpan');}).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).setMaintenanceMode(on,msg);
+      }).withFailureHandler(e=>{hideLoader();showToast(e.message,'error')}).saveSettings({AppName:document.getElementById('settingAppName').value,SessionTimeout:document.getElementById('settingTimeout').value});
+    }
+
+
+
+
+    function downloadBackup(type) {
+      if(!checkGasContext()) return;
+      showLoader();
+      google.script.run.withSuccessHandler(res => {
+        hideLoader();
+        let blob, filename;
+        if(type === 'full') {
+          blob = new Blob([res], { type: "application/json" });
+          filename = `Full_Backup_${new Date().getTime()}.json`;
+        } else {
+          blob = new Blob([res], { type: "text/csv" });
+          filename = `${type}_export_${new Date().getTime()}.csv`;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+      }).withFailureHandler(e => {hideLoader();showToast(e.message,'error');}).exportData(type);
+    }
+
+
+
+
+    // INIT
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(refreshData, 500);
+    });
+  </script>
+<script>
+/* ERP INTEGRATION BRIDGE v2 */
+window.ERPBridge = window.ERPBridge || (function(){
+  const KEY='erpSession';
+  function session(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+  function save(res){if(res&&res.token){localStorage.setItem(KEY,JSON.stringify({token:res.token,user:res.userData||res.user||{}}));} return res;}
+  function clear(){localStorage.removeItem(KEY);}
+  function call(action,payload,onSuccess,onError){
+    payload=payload||{}; const s=session();
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia. Buka URL Web App resmi.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Backend error'});}).apiCall(action,payload,s?s.token:'');
+  }
+  function bootstrap(page,onSuccess,onError){
+    const s=session();
+    if(!s||!s.token){onError&&onError({code:'NO_SESSION',message:'Sesi login tidak ditemukan.'});return;}
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Bootstrap gagal'});}).getIntegratedBootstrap(s.token,page||'');
+  }
+  return {session,save,clear,call,bootstrap};
+})();
+</script><script>
+window.addEventListener('DOMContentLoaded',function(){
+  const s=ERPBridge.session();
+  if(s&&s.user&&String(s.user.role||s.user.Role||'').toUpperCase()==='SUPER_ADMIN'){
+    document.body.dataset.companyId=s.user.companyId||s.user.CompanyID||'SYSTEM';
+  }
+});
+</script>
+
+<script>
+/* ERP COMMUNICATION CENTER v1 */
+(function(){
+  const C={users:[],chats:[],broadcasts:[],targetId:'ALL',targetRole:'ALL',user:null,maintenance:null,lastBroadcastKey:''};
+  window.ERPComm=C;
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});}
+  function roleLabel(r){return ({SUPER_ADMIN:'Super Admin',ADMIN_PERUSAHAAN:'Admin Perusahaan',AKUNTAN:'Akuntan',KASIR:'Kasir',MANAJEMEN_PUNCAK:'Manajemen Puncak'}[String(r||'').toUpperCase()]||r||'-');}
+  function call(a,p,s){if(window.ERPBridge&&ERPBridge.call)return ERPBridge.call(a,p,s,function(e){},function(e){erpToast(e.message||'Gagal','error')});}
+  function getToken(){try{const x=JSON.parse(localStorage.getItem('erpSession')||'null');return x&&x.token?x.token:''}catch(e){return ''}}
+  function notify(kind,msg){if(typeof showToast==='function'){try{showToast(msg,kind||'info');return}catch(e){}} if(typeof Swal!=='undefined') Swal.fire(msg);}
+  window.erpToast=notify;
+  function renderUsers(){
+    const box=document.getElementById('erpChatUsers'),filter=(document.getElementById('erpChatRoleFilter')||{}).value||'ALL'; if(!box)return;
+    box.innerHTML=C.users.filter(u=>u.id!==((C.user||{}).id||'')&&(filter==='ALL'||String(u.role||'').toUpperCase()===filter)).map(u=>`<button type="button" onclick="erpChatSelect('${esc(u.id)}','${esc(u.role)}','${esc(u.name||u.email)}')" class="w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 hover:bg-slate-950 transition"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-indigo-500/15 text-indigo-300 flex items-center justify-center text-xs font-bold">${esc((u.name||'?').charAt(0).toUpperCase())}</div><div class="min-w-0"><div class="text-xs font-bold text-white truncate">${esc(u.name||u.email)}</div><div class="text-[10px] text-slate-500 truncate">${esc(roleLabel(u.role))}</div></div></div></button>`).join('')||'<div class="text-xs text-slate-500 p-3">Tidak ada pengguna untuk filter ini.</div>';
+  }
+  function renderMessages(){
+    const box=document.getElementById('erpChatMessages'); if(!box)return;
+    const me=(C.user&&C.user.id)||''; const selected=C.targetId||'ALL'; const role=C.targetRole||'ALL';
+    const arr=C.chats.filter(m=>{
+      const sender=String(m.SenderID||m.senderId||''); const receiver=String(m.ReceiverID||m.receiverId||''); const rt=String(m.RoleTarget||m.roleTarget||'').toUpperCase();
+      if(selected==='ALL'&&role==='ALL') return rt==='ALL'||receiver==='ALL'||receiver==='';
+      if(role!=='ALL') return (rt===role||rt==='ROLE:'+role)&& (sender===me||receiver===me||sender!=='' );
+      return (sender===me&&receiver===selected)||(receiver===me&&sender===selected);
+    });
+    box.innerHTML=arr.map(m=>{const mine=String(m.SenderID||m.senderId||'')===String(me);return `<div class="flex ${mine?'justify-end':'justify-start'}"><div class="max-w-[82%] px-3 py-2.5 rounded-2xl ${mine?'bg-indigo-600 text-white':'bg-slate-800 text-slate-200'}"><div class="text-[9px] opacity-70 mb-1">${esc(m.Pengirim||m.SenderName||'User')} · ${esc(m.Waktu||m.Time||'')}</div><div class="text-xs leading-relaxed whitespace-pre-wrap">${esc(m.Pesan||m.Text||'')}</div></div></div>`}).join('')||'<div class="h-full min-h-[240px] flex items-center justify-center text-xs text-slate-500">Belum ada pesan pada percakapan ini.</div>';
+    box.scrollTop=box.scrollHeight;
+  }
+  function renderBroadcasts(){
+    const box=document.getElementById('erpBroadcastItems'), latest=C.broadcasts||[]; if(box)box.innerHTML=latest.map(b=>`<div class="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5"><div class="flex items-center justify-between gap-2"><b class="text-xs text-amber-300">${esc(b.Title||'Broadcast')}</b><span class="text-[9px] text-slate-500">${esc(b.Date||b.CreatedAt||'')}</span></div><p class="text-xs text-slate-300 mt-1 whitespace-pre-wrap">${esc(b.Message||'')}</p><div class="text-[9px] text-slate-500 mt-1">Target: ${esc(b.Target||'ALL')}</div></div>`).join('')||'<div class="text-xs text-slate-500">Belum ada broadcast.</div>';
+    const top=latest[0]; const n=document.getElementById('erpGlobalNotice'); if(top&&n){document.getElementById('erpGlobalNoticeTitle').textContent=top.Title||'Pengumuman Sistem';document.getElementById('erpGlobalNoticeText').textContent=top.Message||'';n.classList.remove('hidden');}
+  }
+  function apply(res){
+    if(!res)return; C.user=res.user||C.user; C.users=res.users||[]; C.chats=res.chats||[]; C.broadcasts=res.broadcasts||[]; C.maintenance=res.maintenance||null;
+    renderUsers();renderMessages();renderBroadcasts();applyMaintenance(C.maintenance);
+  }
+  function applyMaintenance(m){
+    const overlay=document.getElementById('erpMaintenanceOverlay'), txt=document.getElementById('erpMaintenanceText'); if(!overlay)return;
+    const role=String((C.user||{}).role||'').toUpperCase(); const on=!!(m&&m.isUnderMaintenance); if(txt)txt.textContent=(m&&m.noticeText)||'Operasional sementara dikunci oleh Super Admin.';
+    if(on&&role!=='SUPER_ADMIN')overlay.classList.remove('hidden'); else overlay.classList.add('hidden');
+    if(typeof checkMaintenanceStatus==='function' && role==='SUPER_ADMIN') try{checkMaintenanceStatus()}catch(e){}
+  }
+  window.applyMaintenance=applyMaintenance;
+  window.closeErpNotice=function(){const n=document.getElementById('erpGlobalNotice');if(n)n.classList.add('hidden');};
+  window.erpChatSelect=function(id,role,name){C.targetId=id;C.targetRole=role==='ALL'?'ALL':'';const t=document.getElementById('erpChatTargetTitle'),s=document.getElementById('erpChatTargetSub');if(t)t.textContent=name||'Penerima';if(s)s.textContent=role==='ALL'?'Semua pengguna':roleLabel(role);renderUsers();renderMessages();};
+  window.erpChatRenderUsers=renderUsers;
+  window.erpChatSend=function(e){
+    e.preventDefault(); const input=document.getElementById('erpChatInput'); const text=(input&&input.value||'').trim(); if(!text)return;
+    const payload={text:text,receiverId:C.targetId||'ALL',roleTarget:C.targetRole||'ALL'};
+    if(input)input.disabled=true;
+    ERPBridge.call('sendInternalChat',payload,function(r){if(input){input.value='';input.disabled=false;} if(r&&r.chat)C.chats.push(r.chat);renderMessages();},function(err){if(input)input.disabled=false;notify('error',err.message||'Gagal mengirim pesan');});
+  };
+  window.erpChatRefresh=function(){
+    const s=ERPBridge.session&&ERPBridge.session(); if(!s||!s.token)return;
+    ERPBridge.call('getCommunicationData',{},function(r){apply(r)},function(e){notify('error',e.message||'Gagal memuat komunikasi');});
+  };
+  window.erpRefreshCommunication=window.erpChatRefresh;
+  window.erpCommBoot=function(){erpChatRefresh();setInterval(erpChatRefresh,15000);};
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(erpCommBoot,350);});
+})();
+</script>
+
+</body>
+</html>

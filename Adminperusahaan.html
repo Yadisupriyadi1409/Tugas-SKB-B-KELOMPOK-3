@@ -1,0 +1,2006 @@
+﻿<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Perusahaan - Operational Control Center</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px); }
+  </style>
+</head>
+
+<body class="h-full flex overflow-hidden font-sans bg-slate-950 text-slate-200">
+<!-- ERP GLOBAL COMMUNICATION / MAINTENANCE -->
+<div id="erpGlobalNotice" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-[95] w-[min(92vw,900px)] px-4 py-3 rounded-2xl border border-indigo-400/30 bg-slate-900/95 backdrop-blur shadow-2xl">
+  <div class="flex items-start gap-3"><div class="text-xl">📢</div><div class="min-w-0 flex-1"><div id="erpGlobalNoticeTitle" class="font-bold text-sm text-white">Pengumuman Sistem</div><div id="erpGlobalNoticeText" class="text-xs text-slate-300 mt-1 whitespace-pre-line"></div></div><button type="button" onclick="closeErpNotice()" class="text-slate-400 hover:text-white">✕</button></div>
+</div>
+<div id="erpMaintenanceOverlay" class="hidden fixed inset-0 z-[90] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-6">
+  <div class="max-w-xl w-full bg-slate-900 border border-rose-500/30 rounded-3xl shadow-2xl p-8 text-center">
+    <div class="w-16 h-16 rounded-2xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-3xl mx-auto mb-5">🛠️</div>
+    <h2 class="text-2xl font-black text-white">Sistem Sedang Maintenance</h2>
+    <p id="erpMaintenanceText" class="text-sm text-slate-300 mt-3 leading-relaxed">Operasional sementara dikunci oleh Super Admin.</p>
+    <div class="mt-6 text-xs text-slate-500">Halaman akan memeriksa status sistem secara otomatis.</div>
+  </div>
+</div>
+
+
+
+
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+
+
+
+  <!-- MODAL CONTAINER -->
+  <div id="modalOverlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+    <div id="modalCard" class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div id="modalHeader" class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+        <h3 id="modalTitle" class="text-base font-bold text-slate-100 flex items-center gap-2"></h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <div id="modalBody" class="p-6 overflow-y-auto space-y-4 text-sm flex-1"></div>
+      <div id="modalFooter" class="p-4 border-t border-slate-800 bg-slate-800/30 flex justify-end gap-2"></div>
+    </div>
+  </div>
+
+
+
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300 z-30 shrink-0">
+    <!-- Brand Header -->
+    <div class="p-4 border-b border-slate-800 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center font-extrabold text-white shadow-lg shadow-indigo-600/30 text-lg">
+        OPS
+      </div>
+      <div class="overflow-hidden">
+        <h1 class="font-bold text-sm text-slate-100 truncate" id="sidebarCompanyName">PT Nusantara Mandiri</h1>
+        <p class="text-[10px] text-amber-400 font-semibold uppercase tracking-wider">Admin Perusahaan</p>
+      </div>
+    </div>
+
+
+
+
+    <!-- Navigation Menu Items -->
+    <nav class="flex-1 overflow-y-auto p-3 space-y-1 text-xs">
+      <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 py-1">Ringkasan & Tugas</div>
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-chart-line text-indigo-400 w-4"></i> Dashboard Ops
+      </button>
+      <button onclick="switchTab('task-center')" id="nav-task-center" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-list-check text-amber-400 w-4"></i> Task Center <span id="badgeTaskCount" class="ml-auto bg-amber-500/20 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full font-bold">0</span>
+      </button>
+
+
+
+
+      <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 py-1 mt-3">Operasional Transaksi</div>
+      <button onclick="switchTab('transaksi')" id="nav-transaksi" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-receipt text-emerald-400 w-4"></i> Transaksi Operasional
+      </button>
+      <button onclick="switchTab('penjualan')" id="nav-penjualan" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-cart-shopping text-sky-400 w-4"></i> Penjualan (Sales)
+      </button>
+      <button onclick="switchTab('pembelian')" id="nav-pembelian" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-bag-shopping text-purple-400 w-4"></i> Pembelian (Purchasing)
+      </button>
+      <button onclick="switchTab('pengeluaran')" id="nav-pengeluaran" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-wallet text-rose-400 w-4"></i> Pengeluaran (Expense)
+      </button>
+      <button onclick="switchTab('reimbursement')" id="nav-reimbursement" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-hand-holding-dollar text-teal-400 w-4"></i> Reimbursement
+      </button>
+
+
+
+
+      <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 py-1 mt-3">Mitra & Persediaan</div>
+      <button onclick="switchTab('customer')" id="nav-customer" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-users text-blue-400 w-4"></i> Data Customer
+      </button>
+      <button onclick="switchTab('vendor')" id="nav-vendor" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-truck text-orange-400 w-4"></i> Data Vendor
+      </button>
+      <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-boxes-stacked text-amber-500 w-4"></i> Produk & Stok Opname
+      </button>
+
+
+
+
+      <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 py-1 mt-3">Keuangan & Pengawasan</div>
+      <button onclick="switchTab('piutang')" id="nav-piutang" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-arrow-down-left text-emerald-400 w-4"></i> Monitoring Piutang
+      </button>
+      <button onclick="switchTab('hutang')" id="nav-hutang" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-arrow-up-right text-rose-400 w-4"></i> Monitoring Hutang
+      </button>
+      <button onclick="switchTab('budget')" id="nav-budget" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-chart-pie text-cyan-400 w-4"></i> Anggaran (Budget)
+      </button>
+      <button onclick="switchTab('approval')" id="nav-approval" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-clock-rotate-left text-indigo-400 w-4"></i> Status Approval
+      </button>
+      <button onclick="switchTab('anomali')" id="nav-anomali" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-triangle-exclamation text-rose-500 w-4"></i> Temuan Anomali
+      </button>
+
+
+
+
+      <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 py-1 mt-3">Sistem & Dokumentasi</div>
+      <button onclick="switchTab('dokumen')" id="nav-dokumen" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-folder-closed text-yellow-400 w-4"></i> Document Center
+      </button>
+      <button onclick="switchTab('kontrak')" id="nav-kontrak" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-file-contract text-violet-400 w-4"></i> Kontrak Kerja
+      </button>
+      <button onclick="switchTab('issues')" id="nav-issues" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-bug text-red-400 w-4"></i> Masalah Operasional
+      </button>
+      <button onclick="switchTab('risks')" id="nav-risks" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-shield-cat text-amber-400 w-4"></i> Log Risiko Operasional
+      </button>
+      <button onclick="switchTab('kalender')" id="nav-kalender" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-calendar-days text-sky-400 w-4"></i> Kalender Kerja
+      </button>
+      <button onclick="switchTab('erpChat')" id="nav-erpChat" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition"><span>💬</span> Chat Internal</button>
+      <button onclick="switchTab('adminControl')" id="nav-adminControl" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition"><span>🛡️</span> Admin Control Center</button>
+<button onclick="switchTab('laporan')" id="nav-laporan" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-file-export text-emerald-300 w-4"></i> Laporan Admin
+      </button>
+    </nav>
+
+
+
+
+    <!-- User Mini Profile Footer -->
+    <div class="p-3 border-t border-slate-800 bg-slate-950/50 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-slate-200 text-xs" id="userAvatar">
+        AD
+      </div>
+      <div class="overflow-hidden flex-1 cursor-pointer" onclick="switchTab('profil')">
+        <p class="text-xs font-semibold text-slate-200 truncate" id="userDisplayName">Admin Perusahaan</p>
+        <p class="text-[10px] text-slate-500 truncate" id="userEmail">admin@perusahaan.com</p>
+      </div>
+      <button onclick="switchTab('profil')" class="text-slate-400 hover:text-slate-200">
+        <i class="fa-solid fa-gear text-xs"></i>
+      </button>
+    </div>
+  </aside>
+
+
+
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div class="flex-1 flex flex-col overflow-hidden bg-slate-950">
+    
+    <!-- TOP HEADER BAR -->
+    <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800">
+          <i class="fa-solid fa-bars text-sm"></i>
+        </button>
+
+
+
+
+        <!-- Global Search Input -->
+        <div class="relative w-64 md:w-96">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
+          <input type="text" id="globalSearchInput" onkeyup="handleGlobalSearch(event)" placeholder="Cari TRX, Invoice, PO, Customer, SKU..." class="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 pl-8 pr-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500 transition">
+        </div>
+      </div>
+
+
+
+
+      <!-- Top Right Controls -->
+      <div class="flex items-center gap-3">
+        <!-- Urgent Badge -->
+        <div class="hidden sm:flex items-center gap-2 bg-rose-950/50 border border-rose-800/60 px-2.5 py-1 rounded-lg">
+          <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+          <span class="text-[11px] font-bold text-rose-300" id="urgentCounterText">0 Urgent Action</span>
+        </div>
+
+
+
+
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button onclick="toggleNotifDropdown()" class="relative p-2 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800">
+            <i class="fa-solid fa-bell text-sm"></i>
+            <span id="notifBadge" class="absolute top-1 right-1 w-2 h-2 rounded-full bg-indigo-500"></span>
+          </button>
+          
+          <!-- Notif Dropdown -->
+          <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+            <div class="p-3 border-b border-slate-800 flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-200">Notifikasi Operasional</span>
+              <button onclick="switchTab('notifikasi')" class="text-[10px] text-indigo-400 hover:underline">Lihat Semua</button>
+            </div>
+            <div id="notifListMini" class="max-h-64 overflow-y-auto divide-y divide-slate-800/50 text-xs"></div>
+          </div>
+        </div>
+
+
+
+
+        <div class="h-4 w-px bg-slate-800"></div>
+
+
+
+
+        <!-- Reload Data Button -->
+        <button onclick="refreshAllData()" class="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+          <i class="fa-solid fa-rotate text-[10px]"></i> Refresh
+        </button>
+      </div>
+    </header>
+
+
+
+
+    <!-- CONTENT BODY (Dynamic Tabs) -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6" id="mainContent">
+      
+      <!-- TAB 1: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-content space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-100">Operational Control Center</h2>
+            <p class="text-xs text-slate-400">Pusat kendali, verifikasi, dan monitoring transaksi harian perusahaan.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openCreateTxModal()" class="bg-indigo-600 hover:bg-indigo-500 font-semibold text-xs px-3.5 py-2 rounded-lg text-white shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i> Transaksi Baru
+            </button>
+          </div>
+        </div>
+
+
+
+
+        <!-- PRIORITAS 1: URGENT ACTION & CRITICAL WARNING -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- Urgent Action Panel -->
+          <div class="bg-rose-950/20 border border-rose-900/40 p-4 rounded-xl">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-xs font-extrabold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i> Perlu Tindakan Segera (Urgent Task)
+              </h3>
+              <span class="text-[10px] text-slate-400" id="urgentCountSub">0 Item</span>
+            </div>
+            <div id="dashboardUrgentList" class="space-y-2 text-xs"></div>
+          </div>
+
+
+
+
+          <!-- Operational Alert Panel -->
+          <div class="bg-amber-950/20 border border-amber-900/40 p-4 rounded-xl">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation"></i> Warning & Anomali Operasional
+              </h3>
+              <span class="text-[10px] text-slate-400" id="alertCountSub">0 Alert</span>
+            </div>
+            <div id="dashboardAlertList" class="space-y-2 text-xs"></div>
+          </div>
+        </div>
+
+
+
+
+        <!-- PRIORITAS 2: KPI METRICS GRID -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+            <p class="text-[10px] text-slate-400 font-semibold">Transaksi Hari Ini</p>
+            <p class="text-lg font-bold text-slate-100 mt-1" id="kpiTxToday">0</p>
+          </div>
+          <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+            <p class="text-[10px] text-slate-400 font-semibold">Draft Transaksi</p>
+            <p class="text-lg font-bold text-amber-400 mt-1" id="kpiTxDraft">0</p>
+          </div>
+          <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+            <p class="text-[10px] text-slate-400 font-semibold">Review Akuntan</p>
+            <p class="text-lg font-bold text-indigo-400 mt-1" id="kpiTxReview">0</p>
+          </div>
+          <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+            <p class="text-[10px] text-rose-400 font-semibold">Perlu Revisi</p>
+            <p class="text-lg font-bold text-rose-400 mt-1" id="kpiTxRevision">0</p>
+          </div>
+          <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+            <p class="text-[10px] text-slate-400 font-semibold">Invoice Overdue</p>
+            <p class="text-lg font-bold text-rose-500 mt-1" id="kpiInvoiceOverdue">0</p>
+          </div>
+          <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+            <p class="text-[10px] text-slate-400 font-semibold">Stok Kritis</p>
+            <p class="text-lg font-bold text-amber-300 mt-1" id="kpiLowStock">0 SKU</p>
+          </div>
+        </div>
+
+
+
+
+        <!-- PRIORITAS 3: STATUS TRANSAKSI & ACTIVITY LOG -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Column 1 & 2: Realtime Transaksi Monitor -->
+          <div class="lg:col-span-2 bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-sm text-slate-200">Status Transaksi Terbaru</h3>
+              <button onclick="switchTab('transaksi')" class="text-xs text-indigo-400 hover:underline">Kelola Semua &rarr;</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-950 text-slate-400 uppercase">
+                  <tr>
+                    <th class="p-2.5">ID TRX</th>
+                    <th class="p-2.5">Tipe</th>
+                    <th class="p-2.5">Keterangan</th>
+                    <th class="p-2.5">Nominal</th>
+                    <th class="p-2.5">Status</th>
+                    <th class="p-2.5 text-center">Aksi Admin</th>
+                  </tr>
+                </thead>
+                <tbody id="dashTxTable" class="divide-y divide-slate-800 text-slate-300"></tbody>
+              </table>
+            </div>
+          </div>
+
+
+
+
+          <!-- Column 3: Recent Audit Trail / Activity -->
+          <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
+            <h3 class="font-bold text-sm text-slate-200">Aktivitas Terakhir Admin</h3>
+            <div id="dashAuditList" class="space-y-3 text-xs max-h-80 overflow-y-auto"></div>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 2: TASK CENTER -->
+      <section id="tab-task-center" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Task Center Admin</h2>
+            <p class="text-xs text-slate-400">Daftar pekerjaan, koreksi dokumen, dan tindak lanjut operasional.</p>
+          </div>
+          <button onclick="openCreateTaskModal()" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg font-semibold text-white">
+            + Buat Task Baru
+          </button>
+        </div>
+
+
+
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Task ID</th>
+                <th class="p-3">Jenis Task</th>
+                <th class="p-3">Prioritas</th>
+                <th class="p-3">Deadline</th>
+                <th class="p-3">Status</th>
+                <th class="p-3">Related ID</th>
+                <th class="p-3">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="taskTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 3: TRANSAKSI OPERASIONAL -->
+      <section id="tab-transaksi" class="tab-content hidden space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Pencatatan Transaksi Operasional</h2>
+            <p class="text-xs text-slate-400">Status draft & perlu revisi dapat diperbaiki. Transaksi diajukan ke Akuntan untuk diverifikasi.</p>
+          </div>
+          <button onclick="openCreateTxModal()" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3.5 py-2 rounded-lg font-semibold text-white">
+            + Tambah Transaksi
+          </button>
+        </div>
+
+
+
+
+        <!-- Filter Bar -->
+        <div class="flex flex-wrap items-center gap-2 bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs">
+          <select id="filterTxStatus" onchange="renderTxTable()" class="bg-slate-950 border border-slate-800 text-slate-200 p-1.5 rounded-lg">
+            <option value="ALL">Semua Status</option>
+            <option value="DRAFT">DRAFT</option>
+            <option value="SUBMITTED">SUBMITTED</option>
+            <option value="NEED REVISION">NEED REVISION</option>
+            <option value="APPROVED">APPROVED</option>
+            <option value="REJECTED">REJECTED</option>
+            <option value="POSTED">POSTED</option>
+          </select>
+          <input type="text" id="searchTxInput" onkeyup="renderTxTable()" placeholder="Filter keterangan / ID..." class="bg-slate-950 border border-slate-800 p-1.5 rounded-lg text-slate-200 w-48">
+        </div>
+
+
+
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Tx ID</th>
+                <th class="p-3">Tanggal</th>
+                <th class="p-3">Jenis</th>
+                <th class="p-3">Keterangan</th>
+                <th class="p-3">Nominal</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-center">Aksi (Admin Control)</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 4: PENJUALAN (SALES) -->
+      <section id="tab-penjualan" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Modul Penjualan (Sales Workflow)</h2>
+            <p class="text-xs text-slate-400">Quotation &rarr; Sales Order &rarr; Delivery &rarr; Invoice &rarr; Payment Monitoring</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openQuotationModal()" class="bg-sky-600 hover:bg-sky-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Quotation</button>
+            <button onclick="openSOModal()" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Sales Order</button>
+          </div>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">SO ID / Quotation</th>
+                <th class="p-3">Customer</th>
+                <th class="p-3">Tgl Dokumen</th>
+                <th class="p-3">Total Nominal</th>
+                <th class="p-3">Status Workflow</th>
+                <th class="p-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="salesTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 5: PEMBELIAN (PURCHASING) -->
+      <section id="tab-pembelian" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Modul Pembelian & Pengadaan (Purchase Workflow)</h2>
+            <p class="text-xs text-slate-400">Purchase Request &rarr; Verification &rarr; Budget Check &rarr; Approval &rarr; PO &rarr; Goods Receipt &rarr; Vendor Invoice</p>
+          </div>
+          <button onclick="openPRModal()" class="bg-purple-600 hover:bg-purple-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Purchase Request</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">PR / PO ID</th>
+                <th class="p-3">Vendor</th>
+                <th class="p-3">Deskripsi</th>
+                <th class="p-3">Nominal Estimate</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="purchaseTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 6: CUSTOMER -->
+      <section id="tab-customer" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Kelola Data Customer</h2>
+            <p class="text-xs text-slate-400">Catatan: Customer dengan transaksi historis tidak dapat dihapus permanen.</p>
+          </div>
+          <button onclick="openCustomerModal()" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Customer Baru</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">ID</th>
+                <th class="p-3">Nama / Perusahaan</th>
+                <th class="p-3">Kontak / PIC</th>
+                <th class="p-3">Payment Term</th>
+                <th class="p-3">Credit Limit</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="customerTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 7: VENDOR -->
+      <section id="tab-vendor" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Kelola Data Vendor</h2>
+            <p class="text-xs text-slate-400">Pemasok barang/jasa perusahaan. Vendor terikat histori transaksi tidak dapat dihapus.</p>
+          </div>
+          <button onclick="openVendorModal()" class="bg-orange-600 hover:bg-orange-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Vendor Baru</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Vendor ID</th>
+                <th class="p-3">Nama Perusahaan</th>
+                <th class="p-3">PIC & Email</th>
+                <th class="p-3">Bank Details</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="vendorTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 8: PRODUK, PERSEDIAAN & STOCK OPNAME -->
+      <section id="tab-inventory" class="tab-content hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Produk & Persediaan Barang</h2>
+            <p class="text-xs text-slate-400">Monitoring stok, pergerakan barang, dan Stock Opname operasional.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openStockMovementModal()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-lg text-slate-200 border border-slate-700">+ Stock Movement</button>
+            <button onclick="openStockOpnameModal()" class="bg-amber-600 hover:bg-amber-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Stock Opname</button>
+          </div>
+        </div>
+
+
+
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <h3 class="font-bold text-xs text-slate-300 mb-3 uppercase">Master Produk & Level Stok</h3>
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">SKU</th>
+                <th class="p-3">Nama Produk</th>
+                <th class="p-3">Kategori</th>
+                <th class="p-3">Harga Unit</th>
+                <th class="p-3">Min / Max Stock</th>
+                <th class="p-3">Fisik Sisa</th>
+                <th class="p-3">Alert Status</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 9: PENGELUARAN (EXPENSE) -->
+      <section id="tab-pengeluaran" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Pengeluaran Operasional (Expense)</h2>
+            <p class="text-xs text-slate-400">Pencatatan pengeluaran rutin, kas kecil, dan operasional departemen.</p>
+          </div>
+          <button onclick="openExpenseModal()" class="bg-rose-600 hover:bg-rose-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Input Pengeluaran</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Expense ID</th>
+                <th class="p-3">Tanggal</th>
+                <th class="p-3">Kategori</th>
+                <th class="p-3">Nominal</th>
+                <th class="p-3">Requester</th>
+                <th class="p-3">Status Workflow</th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 10: REIMBURSEMENT -->
+      <section id="tab-reimbursement" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Pengajuan Reimbursement Karyawan</h2>
+            <p class="text-xs text-slate-400">Verifikasi klaim pengeluaran karyawan sebelum dikirim ke Akuntan.</p>
+          </div>
+          <button onclick="openReimburseModal()" class="bg-teal-600 hover:bg-teal-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Ajukan Reimbursement</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">ID Klaim</th>
+                <th class="p-3">Karyawan</th>
+                <th class="p-3">Kategori & Note</th>
+                <th class="p-3">Jumlah (Rp)</th>
+                <th class="p-3">Bukti Nota</th>
+                <th class="p-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="reimbursementTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 11: MONITORING PIUTANG -->
+      <section id="tab-piutang" class="tab-content hidden space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">Monitoring Piutang Usaha (Accounts Receivable)</h2>
+          <p class="text-xs text-slate-400">Pantau invoice jatuh tempo dan catat aktivitas penagihan ke customer.</p>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Customer</th>
+                <th class="p-3">Invoice ID</th>
+                <th class="p-3">Jatuh Tempo</th>
+                <th class="p-3">Total Piutang</th>
+                <th class="p-3">Sisa Outstanding</th>
+                <th class="p-3">Kategori Aging</th>
+                <th class="p-3 text-center">Tindak Lanjut</th>
+              </tr>
+            </thead>
+            <tbody id="piutangTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 12: MONITORING HUTANG -->
+      <section id="tab-hutang" class="tab-content hidden space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">Monitoring Hutang Usaha (Accounts Payable)</h2>
+          <p class="text-xs text-slate-400">Verifikasi kelengkapan dokumen tagihan vendor sebelum diproses pembayaran oleh Akuntan.</p>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Vendor</th>
+                <th class="p-3">Inv Vendor ID</th>
+                <th class="p-3">Jatuh Tempo</th>
+                <th class="p-3">Total Tagihan</th>
+                <th class="p-3">Status Dokumen</th>
+                <th class="p-3">Status Bayar</th>
+              </tr>
+            </thead>
+            <tbody id="hutangTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 13: DOCUMENT CENTER -->
+      <section id="tab-dokumen" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Document Center</h2>
+            <p class="text-xs text-slate-400">Pusat arsip pendukung transaksi, kontrak, dan berkas operasional.</p>
+          </div>
+          <button onclick="openUploadDocModal()" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Upload Dokumen</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Nama Dokumen</th>
+                <th class="p-3">Modul Terkait</th>
+                <th class="p-3">Ref ID</th>
+                <th class="p-3">Tgl Upload</th>
+                <th class="p-3">Status Kelengkapan</th>
+                <th class="p-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="documentTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 14: APPROVAL MONITORING -->
+      <section id="tab-approval" class="tab-content hidden space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">Monitoring Status Approval</h2>
+          <p class="text-xs text-slate-400">Admin hanya memonitor status keputusan Akuntan / Manajemen. Admin TIDAK dapat melakukan approve atas nama pihak lain.</p>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Ref ID Transaksi</th>
+                <th class="p-3">Jenis Pengajuan</th>
+                <th class="p-3">Posisi Waiting</th>
+                <th class="p-3">Catatan Revisi / Alasan</th>
+                <th class="p-3">Status Terakhir</th>
+              </tr>
+            </thead>
+            <tbody id="approvalMonitorTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 15: ANOMALI OPERASIONAL -->
+      <section id="tab-anomali" class="tab-content hidden space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">Temuan Anomali & Warning Sistem</h2>
+          <p class="text-xs text-slate-400">Admin menindaklanjuti dengan melengkapi dokumen atau klarifikasi. Admin tidak dapat menghapus record anomali.</p>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Anomali ID</th>
+                <th class="p-3">Tipe Risiko</th>
+                <th class="p-3">Deskripsi Temuan</th>
+                <th class="p-3">Klarifikasi Admin</th>
+                <th class="p-3 text-center">Aksi Respon</th>
+              </tr>
+            </thead>
+            <tbody id="anomaliTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 16: BUDGET MONITORING -->
+      <section id="tab-budget" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Monitoring Budget Operasional</h2>
+            <p class="text-xs text-slate-400">Admin hanya membaca status penggunaan budget. Jika kurang, ajukan "Request Budget Revision".</p>
+          </div>
+          <button onclick="openBudgetRevisionModal()" class="bg-cyan-700 hover:bg-cyan-600 text-xs px-3 py-2 rounded-lg text-white font-semibold">Request Revisi Budget</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Departemen / Post</th>
+                <th class="p-3">Alokasi Budget</th>
+                <th class="p-3">Committed (PO)</th>
+                <th class="p-3">Actual Terpakai</th>
+                <th class="p-3">Sisa Budget</th>
+                <th class="p-3">Persentase Usage</th>
+              </tr>
+            </thead>
+            <tbody id="budgetTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 17: KONTRAK KERJA -->
+      <section id="tab-kontrak" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Monitoring Kontrak Operasional</h2>
+            <p class="text-xs text-slate-400">Pantau masa berlaku kontrak customer, vendor, atau sewa operasional.</p>
+          </div>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Contract ID</th>
+                <th class="p-3">Mitra Kerja</th>
+                <th class="p-3">Nilai Kontrak</th>
+                <th class="p-3">Periode Expired</th>
+                <th class="p-3">Alert Masa Berlaku</th>
+              </tr>
+            </thead>
+            <tbody id="kontrakTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 18: MASALAH OPERASIONAL (ISSUES) -->
+      <section id="tab-issues" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Issue Management (Masalah Operasional)</h2>
+            <p class="text-xs text-slate-400">Pencatatan dan eskalasi kendala pengiriman, stok habis, atau kendala supplier.</p>
+          </div>
+          <button onclick="openIssueModal()" class="bg-red-600 hover:bg-red-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Catat Issue Baru</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Issue ID</th>
+                <th class="p-3">Kategori Kendala</th>
+                <th class="p-3">Deskripsi Masalah</th>
+                <th class="p-3">Prioritas</th>
+                <th class="p-3">PIC & Deadline</th>
+                <th class="p-3">Status Fix</th>
+              </tr>
+            </thead>
+            <tbody id="issueTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 19: RISIKO OPERASIONAL -->
+      <section id="tab-risks" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">Pencatatan Risiko Operasional</h2>
+            <p class="text-xs text-slate-400">Daftar potensi risiko teknis dan rencana mitigasi di lapangan.</p>
+          </div>
+          <button onclick="openRiskModal()" class="bg-amber-600 hover:bg-amber-500 text-xs px-3 py-2 rounded-lg text-white font-semibold">+ Catat Potensi Risiko</button>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase">
+              <tr>
+                <th class="p-3">Risk ID</th>
+                <th class="p-3">Kategori Risiko</th>
+                <th class="p-3">Dampak & Probabilitas</th>
+                <th class="p-3">Langkah Mitigasi</th>
+                <th class="p-3">Level Risiko</th>
+              </tr>
+            </thead>
+            <tbody id="riskTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 20: KALENDER OPERASIONAL -->
+      <section id="tab-kalender" class="tab-content hidden space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">Kalender Kerja & Deadline Operasional</h2>
+          <p class="text-xs text-slate-400">Jadwal jatuh tempo invoice, expired kontrak, stok opname, dan pengiriman barang.</p>
+        </div>
+        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800">
+          <div id="calendarList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs"></div>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 21: LAPORAN ADMIN -->
+      <section id="tab-laporan" class="tab-content hidden space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">Pusat Laporan Operasional</h2>
+          <p class="text-xs text-slate-400">Ekspor laporan rekapitulasi operasional ke PDF atau Excel.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+            <h3 class="font-bold text-xs text-indigo-400">Laporan Transaksi & Penjualan</h3>
+            <p class="text-[11px] text-slate-400">Rekap seluruh transaksi harian dan sales order terproses.</p>
+            <button onclick="triggerExport('TRANSACTIONS')" class="w-full bg-slate-800 hover:bg-slate-700 text-xs py-1.5 rounded border border-slate-700 text-slate-200">Export PDF / Excel</button>
+          </div>
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+            <h3 class="font-bold text-xs text-emerald-400">Laporan Stok & Inventory</h3>
+            <p class="text-[11px] text-slate-400">Ringkasan stok barang, pergerakan gudang, dan penyesuaian opname.</p>
+            <button onclick="triggerExport('INVENTORY')" class="w-full bg-slate-800 hover:bg-slate-700 text-xs py-1.5 rounded border border-slate-700 text-slate-200">Export PDF / Excel</button>
+          </div>
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+            <h3 class="font-bold text-xs text-amber-400">Laporan Task & Anomali</h3>
+            <p class="text-[11px] text-slate-400">Audit kelengkapan dokumen operasional dan log pekerjaan admin.</p>
+            <button onclick="triggerExport('AUDIT')" class="w-full bg-slate-800 hover:bg-slate-700 text-xs py-1.5 rounded border border-slate-700 text-slate-200">Export PDF / Excel</button>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <!-- TAB 22: NOTIFIKASI -->
+      <section id="tab-notifikasi" class="tab-content hidden space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">Log Notifikasi Masuk</h2>
+          <p class="text-xs text-slate-400">Pemberitahuan perubahan status transaksi dari Akuntan dan peringatan sistem.</p>
+        </div>
+        <div id="fullNotifList" class="bg-slate-900 p-4 rounded-xl border border-slate-800 divide-y divide-slate-800 text-xs"></div>
+      </section>
+
+
+
+
+      <!-- TAB 23: PROFIL ADMIN -->
+      <section id="tab-profil" class="tab-content hidden space-y-4">
+        <div class="max-w-xl bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-4">
+          <h2 class="text-lg font-bold text-slate-100">Profil Admin Perusahaan</h2>
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1">Nama Lengkap</label>
+              <input type="text" id="profName" value="Budi Santoso" class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-slate-200">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Email Internal</label>
+              <input type="text" id="profEmail" value="budi.admin@nusantara.co.id" disabled class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-slate-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Perusahaan (Isolated ID)</label>
+              <input type="text" id="profCompany" value="COMP-001 (PT Nusantara Mandiri)" disabled class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-slate-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Role Sistem</label>
+              <input type="text" value="ADMIN PERUSAHAAN (Locked)" disabled class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-amber-500 font-bold">
+            </div>
+            <button onclick="saveProfile()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded">Simpan Perubahan Profil</button>
+          </div>
+        </div>
+      </section>
+
+
+
+
+    
+<section id="tab-adminControl" class="tab-content hidden space-y-6 animate-fade-in">
+  <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
+    <div><h2 class="text-lg font-bold text-white">Admin Company Control Center</h2><p class="text-xs text-slate-400">Pusat kendali administrasi perusahaan: master data, SDM, procurement, sales, kontrak, compliance, layanan, aset, dan pengendalian operasional.</p></div>
+    <div class="flex gap-2"><button onclick="adminControlRefresh()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs">↻ Sinkronisasi</button><button onclick="openAdminRecordModal('companyprofile')" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Profil Perusahaan</button></div>
+  </div>
+  <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3"><div class="text-[10px] text-slate-500">Sales MTD</div><div id="ac-sales" class="text-base font-black text-emerald-400 mt-1">Rp 0</div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3"><div class="text-[10px] text-slate-500">Expense MTD</div><div id="ac-expense" class="text-base font-black text-rose-400 mt-1">Rp 0</div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3"><div class="text-[10px] text-slate-500">Cash + Bank</div><div id="ac-cash" class="text-base font-black text-sky-400 mt-1">Rp 0</div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3"><div class="text-[10px] text-slate-500">Piutang</div><div id="ac-ar" class="text-base font-black text-amber-400 mt-1">Rp 0</div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3"><div class="text-[10px] text-slate-500">Utang</div><div id="ac-ap" class="text-base font-black text-purple-400 mt-1">Rp 0</div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3"><div class="text-[10px] text-slate-500">Stok Kritis</div><div id="ac-low" class="text-base font-black text-amber-300 mt-1">0</div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3"><div class="text-[10px] text-slate-500">Open Issue</div><div id="ac-issues" class="text-base font-black text-rose-300 mt-1">0</div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3"><div class="text-[10px] text-slate-500">Compliance 30 Hari</div><div id="ac-compliance" class="text-base font-black text-indigo-300 mt-1">0</div></div>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+    <div class="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="flex items-center justify-between mb-3"><h3 class="text-sm font-bold text-white">Operational Health</h3><span id="ac-healthBadge" class="text-[10px] px-2 py-1 rounded bg-slate-800 text-slate-300">-</span></div><div id="ac-healthGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><h3 class="text-sm font-bold text-white mb-3">Prioritas Admin</h3><div id="ac-priorities" class="space-y-2"></div></div>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-sm font-bold text-white">Master SDM & Organisasi</h3><div class="flex gap-2"><button onclick="openAdminRecordModal('department')" class="px-2 py-1 rounded bg-slate-800 text-[10px]">+ Departemen</button><button onclick="openAdminRecordModal('employee')" class="px-2 py-1 rounded bg-indigo-600 text-[10px]">+ Karyawan</button></div></div><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="bg-slate-950"><tr><th class="p-2 text-left">Karyawan</th><th class="p-2">Dept</th><th class="p-2">Jabatan</th><th class="p-2">Status</th></tr></thead><tbody id="ac-employeeTable"></tbody></table></div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-sm font-bold text-white">Procurement & Sales Pipeline</h3><div class="flex gap-2"><button onclick="openAdminRecordModal('quotation')" class="px-2 py-1 rounded bg-slate-800 text-[10px]">+ Quotation</button><button onclick="openAdminRecordModal('contract')" class="px-2 py-1 rounded bg-indigo-600 text-[10px]">+ Kontrak</button></div></div><div class="grid grid-cols-3 gap-3 mb-3"><div class="bg-slate-950 rounded-lg p-3"><div class="text-[9px] text-slate-500">Quotation</div><b id="ac-quotationCount">0</b></div><div class="bg-slate-950 rounded-lg p-3"><div class="text-[9px] text-slate-500">Delivery</div><b id="ac-deliveryCount">0</b></div><div class="bg-slate-950 rounded-lg p-3"><div class="text-[9px] text-slate-500">Kontrak jatuh tempo</div><b id="ac-contractCount">0</b></div></div><div id="ac-contractList" class="space-y-2"></div></div>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-sm font-bold text-white">Issue & Service Desk</h3><button onclick="openAdminRecordModal('servicerequest')" class="px-2 py-1 rounded bg-red-600 text-[10px] text-white">+ Service Request</button></div><div id="ac-issueList" class="space-y-2"></div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-sm font-bold text-white">Compliance Calendar</h3><button onclick="openAdminRecordModal('compliance')" class="px-2 py-1 rounded bg-amber-600 text-[10px] text-white">+ Event</button></div><div id="ac-calendarList" class="space-y-2"></div></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-sm font-bold text-white">Pengadaan / Asset Request</h3><button onclick="openAdminRecordModal('assetrequest')" class="px-2 py-1 rounded bg-purple-600 text-[10px] text-white">+ Request</button></div><div id="ac-assetList" class="space-y-2"></div></div>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-sm font-bold text-white">Kebijakan & Approval Matrix</h3><button onclick="openAdminRecordModal('policy')" class="px-2 py-1 rounded bg-indigo-600 text-[10px]">+ Kebijakan</button></div><div id="ac-policyList" class="space-y-2"></div><button onclick="openAdminRecordModal('approvalmatrix')" class="mt-3 px-2 py-1 rounded bg-slate-800 text-[10px]">Atur Approval Matrix</button></div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-sm font-bold text-white">Kontrol Absensi, Cuti & Kinerja</h3><div class="flex gap-2"><button onclick="openAdminRecordModal('attendance')" class="px-2 py-1 rounded bg-slate-800 text-[10px]">+ Absensi</button><button onclick="openAdminRecordModal('leave')" class="px-2 py-1 rounded bg-emerald-600 text-[10px]">+ Cuti</button><button onclick="openAdminRecordModal('performancereview')" class="px-2 py-1 rounded bg-indigo-600 text-[10px]">+ Review</button></div></div><div id="ac-peopleList" class="space-y-2"></div></div>
+  </div>
+</section>
+<section id="tab-erpChat" class="tab-content hidden space-y-5 animate-fade-in">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div><h3 class="font-bold text-lg text-white">Chat Internal ERP</h3><p class="text-xs text-slate-400">Pesan disimpan di Google Sheet <b>Chats</b>. Pilih penerima berdasarkan pengguna atau role.</p></div>
+    <div id="erpChatStatus" class="text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">TERHUBUNG</div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div class="lg:col-span-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3">
+      <div class="flex gap-2"><select id="erpChatRoleFilter" onchange="erpChatRenderUsers()" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"><option value="ALL">Semua Role</option><option value="SUPER_ADMIN">Super Admin</option><option value="ADMIN_PERUSAHAAN">Admin Perusahaan</option><option value="AKUNTAN">Akuntan</option><option value="KASIR">Kasir</option><option value="MANAJEMEN_PUNCAK">Manajemen Puncak</option></select><button onclick="erpChatRefresh()" class="px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs">↻</button></div>
+      <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 cursor-pointer" onclick="erpChatSelect('ALL','ALL','Semua Pengguna')"><div class="font-bold text-xs text-indigo-200">📢 Semua Pengguna</div><div class="text-[10px] text-slate-400">Pesan internal umum</div></div>
+      <div id="erpChatUsers" class="space-y-2 max-h-[55vh] overflow-y-auto custom-scrollbar"></div>
+    </div>
+    <div class="lg:col-span-8 bg-slate-900/80 border border-slate-800 rounded-2xl min-h-[60vh] flex flex-col overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800"><div id="erpChatTargetTitle" class="font-bold text-sm text-white">Semua Pengguna</div><div id="erpChatTargetSub" class="text-[10px] text-slate-500">Broadcast internal</div></div>
+      <div id="erpChatMessages" class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-3"></div>
+      <form onsubmit="erpChatSend(event)" class="p-4 border-t border-slate-800 flex gap-2"><input id="erpChatInput" autocomplete="off" placeholder="Tulis pesan..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"><button class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold">Kirim</button></form>
+    </div>
+  </div>
+  <div id="erpBroadcastFeed" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4"><div class="font-bold text-sm text-white mb-3">Broadcast Super Admin</div><div id="erpBroadcastItems" class="space-y-2"></div></div>
+</section>
+
+</main>
+  </div>
+
+
+
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    /**
+     * GLOBAL STATE MANAGEMENT
+     */
+    const AppState = {
+      currentUser: { email:'', name:'', companyId:'COMP-001', role:'ADMIN_PERUSAHAAN' },
+      transactions: [],
+      tasks: [],
+      customers: [],
+      vendors: [],
+      products: [],
+      anomalies: [],
+      auditLogs: [],
+      notifs: [],
+      adminControl: null
+    };
+
+
+
+
+    // DOM Ready Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      refreshAllData();
+      
+    });
+
+
+
+
+    /**
+     * INTEGRATION BRIDGE TO GOOGLE APPS SCRIPT BACKEND
+     */
+    function callBackend(functionName, payload, successCallback) {
+      const s=ERPBridge.session();
+      if (typeof google !== 'undefined' && google.script && google.script.run && s && s.token) {
+        google.script.run.withSuccessHandler(res=>{ if(res&&res.error){showToast(res.error,'error');return;} if(successCallback)successCallback(res); })
+          .withFailureHandler(err=>showToast('Error Backend: '+(err.message||err),'error'))
+          .apiCall(functionName,payload||{},s.token);
+      } else {
+        // Fallback Mock Local Data untuk Testing Frontend
+        console.warn(`[Mock Call Backend] ${functionName}`, payload);
+        setTimeout(() => {
+          const mockResponse = getMockResponse(functionName, payload);
+          if (successCallback) successCallback(mockResponse);
+        }, 300);
+      }
+    }
+
+
+
+
+    /**
+     * MOCK DATA GENERATOR (Untuk pengujian mandiri frontend)
+     */
+    function getMockResponse(fn, payload) {
+      if (fn === 'getAdminDashboardData') {
+        return {
+          companyName: 'PT Nusantara Mandiri',
+          transactions: [
+            { id: 'TRX-901', date: '2026-09-04', type: 'Pembelian', desc: 'Beli kertas A4 & ATK kantor', amount: 1250000, status: 'DRAFT', createdBy: 'Budi' },
+            { id: 'TRX-902', date: '2026-09-03', type: 'Penjualan', desc: 'Penjualan Batch 1 ke PT Jaya', amount: 45000000, status: 'SUBMITTED', createdBy: 'Budi' },
+            { id: 'TRX-903', date: '2026-09-02', type: 'Pengeluaran', desc: 'Sewa Gudang Tambahan', amount: 15000000, status: 'NEED REVISION', createdBy: 'Budi', note: 'Nota pembayaran belum dilampirkan' },
+            { id: 'TRX-904', date: '2026-09-01', type: 'Penjualan', desc: 'Invoice PT ABC', amount: 12000000, status: 'APPROVED', createdBy: 'Budi' }
+          ],
+          tasks: [
+            { id: 'TSK-101', title: 'Upload Ulang Nota Sewa Gudang (TRX-903)', priority: 'URGENT', deadline: '2026-09-05', status: 'OPEN', relatedId: 'TRX-903' },
+            { id: 'TSK-102', title: 'Lengkapi NPWP Vendor PT Karya Utama', priority: 'HIGH', deadline: '2026-09-06', status: 'IN PROGRESS', relatedId: 'VND-002' }
+          ],
+          customers: [
+            { id: 'CUST-001', name: 'PT Jaya Makmur', pic: 'Andi (0812345678)', term: '30 Hari', limit: 100000000, status: 'ACTIVE' },
+            { id: 'CUST-002', name: 'CV Sinar Baru', pic: 'Siti (0819876543)', term: '14 Hari', limit: 30000000, status: 'ACTIVE' }
+          ],
+          vendors: [
+            { id: 'VND-001', name: 'PT Distro Sukses', pic: 'Bambang', bank: 'BCA 123456789', status: 'ACTIVE' }
+          ],
+          products: [
+            { sku: 'SKU-A1', name: 'Kertas HVS A4 80gr', price: 55000, minStock: 20, maxStock: 200, currentStock: 8, status: 'LOW STOCK' },
+            { sku: 'SKU-B2', name: 'Tinta Printer Hitam', price: 120000, minStock: 5, maxStock: 50, currentStock: 25, status: 'NORMAL' }
+          ],
+          anomalies: [
+            { id: 'ANO-88', type: 'Missing Document', desc: 'Transaksi TRX-903 senilai Rp15.000.000 tidak punya lampiran kuitansi valid.', clarification: '', status: 'OPEN' }
+          ],
+          auditLogs: [
+            { action: 'CREATE_TRANSACTION', recordId: 'TRX-901', time: '10:15 WIB', user: 'budi.admin' },
+            { action: 'RESUBMIT_TRANSACTION', recordId: 'TRX-903', time: '09:00 WIB', user: 'budi.admin' }
+          ],
+          notifs: [
+            { id: 'N1', text: 'Akuntan meminta revisi pada TRX-903.', time: '1 jam lalu' },
+            { id: 'N2', text: 'Stok SKU-A1 di bawah batas minimum!', time: '2 jam lalu' }
+          ]
+        };
+      }
+      return { success: true, message: 'Operasi berhasil diproses.' };
+    }
+
+
+
+
+    /**
+     * REFRESH & RENDER DATA SYSTEM
+     */
+    function refreshAllData() {
+      callBackend('getAdminDashboardData', {}, (data) => {
+        AppState.transactions = data.transactions || [];
+        AppState.tasks = data.tasks || [];
+        AppState.customers = data.customers || [];
+        AppState.vendors = data.vendors || [];
+        AppState.products = data.products || [];
+        AppState.anomalies = data.anomalies || [];
+        AppState.auditLogs = data.auditLogs || [];
+        AppState.notifs = data.notifs || [];
+
+        renderDashboard();
+        renderTxTable();
+        renderTaskTable();
+        renderCustomerTable();
+        renderVendorTable();
+        renderInventoryTable();
+        renderAnomaliTable();
+        renderAuditLogs();
+        renderNotifs();
+        checkUrgentAndAlerts();
+        showToast('Data operasional berhasil diperbarui', 'info');
+      });
+      callBackend('getAdminControlCenter', {}, (data) => { AppState.adminControl = data || null; renderAdminControl(data); });
+    }
+
+    function adminControlRefresh(){ callBackend('getAdminControlCenter', {}, (data)=>{ AppState.adminControl=data||null; renderAdminControl(data); showToast('Admin Control Center diperbarui','success'); }); }
+    function rupiah(n){ return 'Rp ' + Number(n||0).toLocaleString('id-ID'); }
+    function renderAdminControl(d){
+      if(!d) return; const k=d.kpis||{};
+      const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+      set('ac-sales',rupiah(k.salesMTD)); set('ac-expense',rupiah(k.expenseMTD)); set('ac-cash',rupiah((k.cash||0)+(k.bank||0))); set('ac-ar',rupiah(k.ar)); set('ac-ap',rupiah(k.ap)); set('ac-low',k.lowStock); set('ac-issues',k.openIssues); set('ac-compliance',k.calendarDue); set('ac-quotationCount',(d.quotations||[]).length); set('ac-deliveryCount',(d.deliveries||[]).length); set('ac-contractCount',k.contractsDue);
+      const health=[['Gross Margin',(k.grossMargin||0).toFixed(1)+'%'],['Budget',(k.budgetUtilization||0).toFixed(1)+'%'],['Headcount',k.headcount||0],['Working Capital',rupiah(k.workingCapital)],['Payroll MTD',rupiah(k.payrollMTD)],['Overdue AR',rupiah(k.overdueAR)],['Open Approval',k.openApprovals||0],['Open Risk',k.openRisks||0]];
+      const hg=document.getElementById('ac-healthGrid'); if(hg)hg.innerHTML=health.map(x=>`<div class=\"bg-slate-950 rounded-lg p-3\"><div class=\"text-[9px] text-slate-500\">${x[0]}</div><div class=\"text-sm font-bold text-white mt-1\">${x[1]}</div></div>`).join('');
+      const pb=document.getElementById('ac-healthBadge'); if(pb){const score=100-Math.min(40,(k.openIssues||0)*5)-Math.min(25,(k.lowStock||0)*3)-Math.min(20,(k.openRisks||0)*4)-Math.min(20,(k.openAnomalies||0)*4);pb.textContent='Operational Score '+Math.max(0,score).toFixed(0)+'/100'; pb.className='text-[10px] px-2 py-1 rounded '+(score>=80?'bg-emerald-500/10 text-emerald-300':score>=60?'bg-amber-500/10 text-amber-300':'bg-rose-500/10 text-rose-300');}
+      const priorities=[]; if(k.lowStock)priorities.push('Replenishment stok kritis: '+k.lowStock); if(k.overdueAR)priorities.push('Piutang overdue: '+rupiah(k.overdueAR)); if(k.openIssues)priorities.push('Issue terbuka: '+k.openIssues); if(k.contractsDue)priorities.push('Kontrak jatuh tempo <30 hari: '+k.contractsDue); if(k.calendarDue)priorities.push('Compliance event 30 hari: '+k.calendarDue); if(!priorities.length)priorities.push('Tidak ada prioritas kritis.'); const pp=document.getElementById('ac-priorities');if(pp)pp.innerHTML=priorities.map(x=>`<div class=\"p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300\">${x}</div>`).join('');
+      const et=document.getElementById('ac-employeeTable'); if(et)et.innerHTML=(d.employees||[]).slice(0,12).map(e=>`<tr class=\"border-b border-slate-800\"><td class=\"p-2\">${e.Name||'-'}</td><td class=\"p-2\">${e.DepartmentID||'-'}</td><td class=\"p-2\">${e.Position||'-'}</td><td class=\"p-2 text-center\">${e.EmploymentStatus||e.Status||'-'}</td></tr>`).join('')||'<tr><td colspan=4 class=\"p-4 text-center text-slate-500\">Belum ada data.</td></tr>';
+      const cl=document.getElementById('ac-contractList'); if(cl)cl.innerHTML=(d.contracts||[]).slice(0,6).map(x=>`<div class=\"p-2 rounded-lg bg-slate-950 border border-slate-800 flex justify-between\"><span class=\"text-xs text-slate-200\">${x.ContractNo||x.Title||x.ContractID}</span><span class=\"text-[10px] text-amber-300\">${x.EndDate||'-'}</span></div>`).join('')||'<div class=\"text-xs text-slate-500\">Tidak ada kontrak.</div>';
+      const il=document.getElementById('ac-issueList'); if(il)il.innerHTML=(d.issues||[]).slice(0,8).map(x=>`<div class=\"p-2 rounded-lg bg-slate-950 border border-rose-900/30\"><div class=\"flex justify-between gap-2\"><b class=\"text-xs text-white\">${x.Category||'Issue'}</b><span class=\"text-[10px] text-rose-300\">${x.Priority||'-'}</span></div><div class=\"text-[10px] text-slate-400 mt-1\">${x.Description||'-'}</div></div>`).join('')||'<div class=\"text-xs text-slate-500\">Tidak ada issue terbuka.</div>';
+      const cal=document.getElementById('ac-calendarList'); if(cal)cal.innerHTML=(d.calendar||[]).slice(0,8).map(x=>`<div class=\"p-2 rounded-lg bg-slate-950 border border-amber-900/30\"><div class=\"flex justify-between\"><b class=\"text-xs text-white\">${x.Title||'-'}</b><span class=\"text-[10px] text-amber-300\">${x.EventDate||'-'}</span></div><div class=\"text-[10px] text-slate-500\">Owner: ${x.Owner||'-'}</div></div>`).join('')||'<div class=\"text-xs text-slate-500\">Tidak ada event terdekat.</div>';
+      const ast=document.getElementById('ac-assetList'); const ars=(d.serviceRequests||[]).slice(0,5); if(ast)ast.innerHTML=ars.map(x=>`<div class=\"p-2 rounded-lg bg-slate-950 border border-purple-900/30\"><b class=\"text-xs text-white\">${x.Title||x.RequestID}</b><div class=\"text-[10px] text-slate-500\">${x.Category||'-'} · ${x.Priority||'-'} · ${x.Status||'-'}</div></div>`).join('')||'<div class=\"text-xs text-slate-500\">Tidak ada request terbuka.</div>';
+      const pol=document.getElementById('ac-policyList'); if(pol)pol.innerHTML=(d.policies||[]).slice(0,5).map(x=>`<div class=\"p-2 rounded-lg bg-slate-950 border border-slate-800\"><b class=\"text-xs text-white\">${x.PolicyCode||''} ${x.Title||'-'}</b><div class=\"text-[10px] text-slate-500\">Review: ${x.ReviewDate||'-'} · ${x.Status||'-'}</div></div>`).join('')||'<div class=\"text-xs text-slate-500\">Belum ada kebijakan.</div>';
+      const ppl=document.getElementById('ac-peopleList'); if(ppl)ppl.innerHTML=(d.leaveRequests||[]).slice(0,6).map(x=>`<div class=\"p-2 rounded-lg bg-slate-950 border border-emerald-900/30\"><b class=\"text-xs text-white\">${x.EmployeeID||'-'}</b><div class=\"text-[10px] text-slate-500\">${x.LeaveType||'-'} · ${x.StartDate||'-'} s/d ${x.EndDate||'-'} · ${x.Status||'-'}</div></div>`).join('')||'<div class=\"text-xs text-slate-500\">Tidak ada permintaan cuti terbuka.</div>';
+    }
+    function openAdminRecordModal(entity){
+      const titles={companyprofile:'Profil Perusahaan',department:'Departemen',employee:'Karyawan',quotation:'Quotation',contract:'Kontrak',servicerequest:'Service Request',compliance:'Compliance Event',assetrequest:'Asset Request',policy:'Kebijakan',approvalmatrix:'Approval Matrix',attendance:'Absensi',leave:'Permintaan Cuti',performancereview:'Performance Review'};
+      const fields={
+        companyprofile:['LegalName','Industry','Address','City','Province','Phone','Email','Website','NPWP','NIB','Currency','TaxStatus'],
+        department:['DepartmentName','Manager','Budget','Status'], employee:['Name','Email','Phone','DepartmentID','Position','JoinDate','EmploymentStatus','BasicSalary'],
+        quotation:['CustomerID','Date','ValidUntil','Total','Status','Notes'], contract:['CounterpartyType','CounterpartyID','ContractNo','Title','StartDate','EndDate','Value','RenewalNoticeDays','PIC','Status','Notes'],
+        servicerequest:['Category','Title','Description','Priority','Requester','Assignee','Deadline','Status'], compliance:['EventDate','Category','Title','Owner','Priority','Status','Reference','Notes'], assetrequest:['Department','Item','Qty','EstimatedCost','Requester','Priority','Status'],
+        policy:['PolicyCode','Title','Category','EffectiveDate','ReviewDate','Owner','Status','DocumentUrl','Notes'], approvalmatrix:['ProcessType','MinAmount','MaxAmount','ApproverRole','Sequence','Active'], attendance:['EmployeeID','Date','ClockIn','ClockOut','WorkHours','Status','Notes'], leave:['EmployeeID','StartDate','EndDate','LeaveType','Reason','Approver','Status'], performancereview:['EmployeeID','Period','Score','KPI','Reviewer','Status','Notes']
+      };
+      const f=fields[entity]||['Title','Status','Notes']; const body='<div class=\"grid grid-cols-1 md:grid-cols-2 gap-3\">'+f.map(k=>`<div><label class=\"block text-[10px] text-slate-400 mb-1\">${k}</label><input id=\"adm_${k}\" class=\"w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white\"></div>`).join('')+'</div>';
+      openModal(titles[entity]||'Admin Record',body,`<button onclick=\"saveAdminRecordForm('${entity}')\" class=\"bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold\">Simpan</button><button onclick=\"closeModal()\" class=\"bg-slate-700 px-4 py-2 rounded-lg text-xs\">Batal</button>`);
+    }
+    function saveAdminRecordForm(entity){ const map={companyprofile:['LegalName','Industry','Address','City','Province','Phone','Email','Website','NPWP','NIB','Currency','TaxStatus'],department:['DepartmentName','Manager','Budget','Status'],employee:['Name','Email','Phone','DepartmentID','Position','JoinDate','EmploymentStatus','BasicSalary'],quotation:['CustomerID','Date','ValidUntil','Total','Status','Notes'],contract:['CounterpartyType','CounterpartyID','ContractNo','Title','StartDate','EndDate','Value','RenewalNoticeDays','PIC','Status','Notes'],servicerequest:['Category','Title','Description','Priority','Requester','Assignee','Deadline','Status'],compliance:['EventDate','Category','Title','Owner','Priority','Status','Reference','Notes'],assetrequest:['Department','Item','Qty','EstimatedCost','Requester','Priority','Status'],policy:['PolicyCode','Title','Category','EffectiveDate','ReviewDate','Owner','Status','DocumentUrl','Notes'],approvalmatrix:['ProcessType','MinAmount','MaxAmount','ApproverRole','Sequence','Active'],attendance:['EmployeeID','Date','ClockIn','ClockOut','WorkHours','Status','Notes'],leave:['EmployeeID','StartDate','EndDate','LeaveType','Reason','Approver','Status'],performancereview:['EmployeeID','Period','Score','KPI','Reviewer','Status','Notes']}; const p={}; (map[entity]||['Title','Status','Notes']).forEach(k=>{const e=document.getElementById('adm_'+k);p[k]=e?e.value:'';}); callBackend('saveAdminRecord',{entity:entity,record:p},()=>{closeModal();adminControlRefresh();}); }
+
+    /**
+     * TAB NAVIGATION SYSTEM
+     */
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('bg-slate-800', 'text-white', 'font-bold');
+      });
+
+
+
+
+      const activeTab = document.getElementById(`tab-${tabId}`);
+      const activeNav = document.getElementById(`nav-${tabId}`);
+
+
+
+
+      if (activeTab) activeTab.classList.remove('hidden');
+      if(tabId==='erpChat') erpRefreshCommunication();
+      if (activeNav) activeNav.classList.add('bg-slate-800', 'text-white', 'font-bold');
+    }
+
+
+
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('-ml-64');
+    }
+
+
+
+
+    /**
+     * RENDER DASHBOARD & KPI
+     */
+    function renderDashboard() {
+      // KPI Numbers
+      document.getElementById('kpiTxToday').innerText = AppState.transactions.length;
+      document.getElementById('kpiTxDraft').innerText = AppState.transactions.filter(t => t.status === 'DRAFT').length;
+      document.getElementById('kpiTxReview').innerText = AppState.transactions.filter(t => t.status === 'SUBMITTED' || t.status === 'UNDER REVIEW').length;
+      document.getElementById('kpiTxRevision').innerText = AppState.transactions.filter(t => t.status === 'NEED REVISION').length;
+      document.getElementById('kpiLowStock').innerText = AppState.products.filter(p => p.currentStock <= p.minStock).length + ' SKU';
+
+
+
+
+      // Table Recent Tx
+      const tbody = document.getElementById('dashTxTable');
+      tbody.innerHTML = AppState.transactions.slice(0, 5).map(t => `
+        <tr>
+          <td class="p-2.5 font-mono text-indigo-400 font-bold">${t.id}</td>
+          <td class="p-2.5">${t.type}</td>
+          <td class="p-2.5 font-medium">${t.desc}</td>
+          <td class="p-2.5 font-mono">Rp ${t.amount.toLocaleString('id-ID')}</td>
+          <td class="p-2.5">${getStatusBadge(t.status)}</td>
+          <td class="p-2.5 text-center">
+            ${getAdminTxActionButton(t)}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+
+
+
+    /**
+     * WORKFLOW CONTROL & ACTION PERMISSION
+     * Admin HANYA boleh edit status DRAFT atau NEED REVISION.
+     */
+    function getAdminTxActionButton(tx) {
+      if (tx.status === 'DRAFT') {
+        return `<button onclick="submitTx('${tx.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-2 py-1 rounded">Submit &rarr;</button>`;
+      } else if (tx.status === 'NEED REVISION') {
+        return `<button onclick="openCorrectionModal('${tx.id}')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] px-2 py-1 rounded">Koreksi & Resubmit</button>`;
+      } else {
+        return `<span class="text-[10px] text-slate-500 italic">Locked (${tx.status})</span>`;
+      }
+    }
+
+
+
+
+    function getStatusBadge(status) {
+      const styles = {
+        'DRAFT': 'bg-amber-500/20 text-amber-300 border-amber-800',
+        'SUBMITTED': 'bg-indigo-500/20 text-indigo-300 border-indigo-800',
+        'NEED REVISION': 'bg-rose-500/20 text-rose-300 border-rose-800',
+        'APPROVED': 'bg-emerald-500/20 text-emerald-300 border-emerald-800',
+        'REJECTED': 'bg-red-500/20 text-red-400 border-red-800',
+        'POSTED': 'bg-sky-500/20 text-sky-300 border-sky-800'
+      };
+      return `<span class="border px-2 py-0.5 rounded text-[10px] font-bold ${styles[status] || 'bg-slate-800 text-slate-400'}">${status}</span>`;
+    }
+
+
+
+
+    /**
+     * RENDER TRANSACTION TABLE
+     */
+    function renderTxTable() {
+      const filterStatus = document.getElementById('filterTxStatus').value;
+      const searchKey = document.getElementById('searchTxInput').value.toLowerCase();
+
+
+
+
+      let filtered = AppState.transactions.filter(t => {
+        const matchStatus = filterStatus === 'ALL' || t.status === filterStatus;
+        const matchSearch = t.desc.toLowerCase().includes(searchKey) || t.id.toLowerCase().includes(searchKey);
+        return matchStatus && matchSearch;
+      });
+
+
+
+
+      const tbody = document.getElementById('txTableBody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500 italic">Tidak ada data transaksi yang sesuai.</td></tr>`;
+        return;
+      }
+
+
+
+
+      tbody.innerHTML = filtered.map(t => `
+        <tr>
+          <td class="p-3 font-mono font-bold text-indigo-400">${t.id}</td>
+          <td class="p-3">${t.date}</td>
+          <td class="p-3">${t.type}</td>
+          <td class="p-3 font-medium">${t.desc}</td>
+          <td class="p-3 font-mono font-bold">Rp ${t.amount.toLocaleString('id-ID')}</td>
+          <td class="p-3">${getStatusBadge(t.status)}</td>
+          <td class="p-3 text-center space-x-1">
+            ${getAdminTxActionButton(t)}
+            <button onclick="viewTxDetail('${t.id}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-1 rounded">Detail</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+
+
+
+    /**
+     * SUBMIT TRANSAKSI KE AKUNTAN
+     */
+    function submitTx(txId) {
+      if (confirm(`Ajukan transaksi ${txId} kepada Akuntan untuk diverifikasi?`)) {
+        callBackend('submitTransaction', { txId: txId }, (res) => {
+          showToast(`Transaksi ${txId} berhasil diajukan ke Akuntan.`, 'success');
+          recordAudit('SUBMIT_TRANSACTION', txId);
+          refreshAllData();
+        });
+      }
+    }
+
+
+
+
+    /**
+     * TASK CENTER RENDER
+     */
+    function renderTaskTable() {
+      const tbody = document.getElementById('taskTableBody');
+      document.getElementById('badgeTaskCount').innerText = AppState.tasks.length;
+
+
+
+
+      tbody.innerHTML = AppState.tasks.map(tsk => `
+        <tr>
+          <td class="p-3 font-mono text-amber-400 font-bold">${tsk.id}</td>
+          <td class="p-3">${tsk.title}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${tsk.priority === 'URGENT' ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-slate-800 text-slate-300'}">${tsk.priority}</span></td>
+          <td class="p-3">${tsk.deadline}</td>
+          <td class="p-3"><span class="font-bold text-xs ${tsk.status === 'OPEN' ? 'text-amber-400' : 'text-emerald-400'}">${tsk.status}</span></td>
+          <td class="p-3 font-mono text-slate-400">${tsk.relatedId || '-'}</td>
+          <td class="p-3 text-center">
+            <button onclick="resolveTask('${tsk.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px]">Tandai Selesai</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+
+
+
+    /**
+     * CHECK URGENT & ALERT NOTIFICATIONS
+     */
+    function checkUrgentAndAlerts() {
+      const urgentContainer = document.getElementById('dashboardUrgentList');
+      const alertContainer = document.getElementById('dashboardAlertList');
+
+
+
+
+      const urgentItems = AppState.tasks.filter(t => t.priority === 'URGENT');
+      const revisionItems = AppState.transactions.filter(t => t.status === 'NEED REVISION');
+
+
+
+
+      document.getElementById('urgentCounterText').innerText = `${urgentItems.length + revisionItems.length} Urgent Action`;
+
+
+
+
+      if (urgentItems.length === 0 && revisionItems.length === 0) {
+        urgentContainer.innerHTML = `<p class="text-slate-500 italic">Tidak ada tugas mendesak.</p>`;
+      } else {
+        urgentContainer.innerHTML = [
+          ...revisionItems.map(r => `
+            <div class="flex justify-between items-center bg-rose-950/40 border border-rose-900/60 p-2 rounded">
+              <span><strong>[Revisi Transaksi]</strong> ${r.id}: ${r.desc}</span>
+              <button onclick="openCorrectionModal('${r.id}')" class="bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded">Perbaiki</button>
+            </div>
+          `),
+          ...urgentItems.map(u => `
+            <div class="flex justify-between items-center bg-rose-950/40 border border-rose-900/60 p-2 rounded">
+              <span><strong>[Task Urgent]</strong> ${u.title}</span>
+              <button onclick="resolveTask('${u.id}')" class="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded">Selesaikan</button>
+            </div>
+          `)
+        ].join('');
+      }
+
+
+
+
+      // Render Alert List
+      const lowStockList = AppState.products.filter(p => p.currentStock <= p.minStock);
+      if (lowStockList.length === 0) {
+        alertContainer.innerHTML = `<p class="text-slate-500 italic">Sistem beroperasi normal tanpa peringatan stok/dokumen.</p>`;
+      } else {
+        alertContainer.innerHTML = lowStockList.map(p => `
+          <div class="flex justify-between items-center bg-amber-950/40 border border-amber-900/60 p-2 rounded">
+            <span><strong>[Stok Kritis]</strong> ${p.name} sisa ${p.currentStock} (Min: ${p.minStock})</span>
+            <button onclick="switchTab('inventory')" class="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded">Reorder</button>
+          </div>
+        `).join('');
+      }
+    }
+
+
+
+
+    /**
+     * CUSTOMER & VENDOR RENDER
+     */
+    function renderCustomerTable() {
+      const tbody = document.getElementById('customerTableBody');
+      tbody.innerHTML = AppState.customers.map(c => `
+        <tr>
+          <td class="p-3 font-mono font-bold text-sky-400">${c.id}</td>
+          <td class="p-3 font-semibold">${c.name}</td>
+          <td class="p-3">${c.pic}</td>
+          <td class="p-3">${c.term}</td>
+          <td class="p-3 font-mono">Rp ${c.limit.toLocaleString('id-ID')}</td>
+          <td class="p-3"><span class="bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">${c.status}</span></td>
+          <td class="p-3 text-center">
+            <button onclick="editCustomer('${c.id}')" class="text-indigo-400 hover:underline text-xs">Edit</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+
+
+
+    function renderVendorTable() {
+      const tbody = document.getElementById('vendorTableBody');
+      tbody.innerHTML = AppState.vendors.map(v => `
+        <tr>
+          <td class="p-3 font-mono font-bold text-orange-400">${v.id}</td>
+          <td class="p-3 font-semibold">${v.name}</td>
+          <td class="p-3">${v.pic}</td>
+          <td class="p-3 font-mono">${v.bank}</td>
+          <td class="p-3"><span class="bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">${v.status}</span></td>
+          <td class="p-3 text-center">
+            <button onclick="editVendor('${v.id}')" class="text-indigo-400 hover:underline text-xs">Edit</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+
+
+
+    function renderInventoryTable() {
+      const tbody = document.getElementById('inventoryTableBody');
+      tbody.innerHTML = AppState.products.map(p => {
+        const isLow = p.currentStock <= p.minStock;
+        return `
+          <tr>
+            <td class="p-3 font-mono font-bold text-amber-400">${p.sku}</td>
+            <td class="p-3 font-semibold">${p.name}</td>
+            <td class="p-3">Atk & Kantor</td>
+            <td class="p-3 font-mono">Rp ${p.price.toLocaleString('id-ID')}</td>
+            <td class="p-3">${p.minStock} / ${p.maxStock}</td>
+            <td class="p-3 font-mono font-bold ${isLow ? 'text-rose-400' : 'text-emerald-400'}">${p.currentStock}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isLow ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'}">
+                ${isLow ? 'LOW STOCK' : 'NORMAL'}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+
+
+
+    function renderAnomaliTable() {
+      const tbody = document.getElementById('anomaliTableBody');
+      tbody.innerHTML = AppState.anomalies.map(a => `
+        <tr>
+          <td class="p-3 font-mono text-rose-400 font-bold">${a.id}</td>
+          <td class="p-3 font-bold">${a.type}</td>
+          <td class="p-3 text-slate-300">${a.desc}</td>
+          <td class="p-3 italic text-slate-400">${a.clarification || 'Belum ditanggapi'}</td>
+          <td class="p-3 text-center">
+            <button onclick="openClarifyAnomalyModal('${a.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-2 py-1 rounded">Beri Klarifikasi</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+
+
+
+    function renderAuditLogs() {
+      const container = document.getElementById('dashAuditList');
+      container.innerHTML = AppState.auditLogs.map(l => `
+        <div class="border-l-2 border-indigo-500 pl-3 py-1">
+          <p class="font-semibold text-slate-200">${l.action} <span class="text-indigo-400">#${l.recordId}</span></p>
+          <p class="text-[10px] text-slate-500">${l.time} • oleh ${l.user}</p>
+        </div>
+      `).join('');
+    }
+
+
+
+
+    function renderNotifs() {
+      const container = document.getElementById('notifListMini');
+      const fullList = document.getElementById('fullNotifList');
+
+
+
+
+      const html = AppState.notifs.map(n => `
+        <div class="p-3 hover:bg-slate-800/50 transition">
+          <p class="text-slate-200">${n.text}</p>
+          <span class="text-[10px] text-slate-500">${n.time}</span>
+        </div>
+      `).join('');
+
+
+
+
+      container.innerHTML = html || `<p class="p-3 text-slate-500 italic">Tidak ada notifikasi baru.</p>`;
+      if (fullList) fullList.innerHTML = html;
+    }
+
+
+
+
+    /**
+     * MODAL CONTROLLER & FORMS
+     */
+    function openModal(title, bodyHtml, footerHtml) {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalBody').innerHTML = bodyHtml;
+      document.getElementById('modalFooter').innerHTML = footerHtml;
+      document.getElementById('modalOverlay').classList.remove('hidden');
+    }
+
+
+
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.add('hidden');
+    }
+
+
+
+
+    function openCreateTxModal() {
+      const body = `
+        <form id="formTx" class="space-y-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Tipe Transaksi Operasional</label>
+            <select id="txType" class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-slate-200 text-xs">
+              <option value="Penjualan">Penjualan (Sales)</option>
+              <option value="Pembelian">Pembelian (Purchase)</option>
+              <option value="Pengeluaran">Pengeluaran Operasional (Expense)</option>
+              <option value="Kas Kecil">Petty Cash / Kas Kecil</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Keterangan / Deskripsi Transaksi</label>
+            <textarea id="txDesc" rows="3" class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-slate-200 text-xs" placeholder="Tuliskan rinci transaksi operasional..."></textarea>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Total Nominal (Rp)</label>
+            <input type="number" id="txAmount" class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-slate-200 text-xs" placeholder="0">
+          </div>
+        </form>
+      `;
+
+
+
+
+      const footer = `
+        <button onclick="closeModal()" class="bg-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded">Batal</button>
+        <button onclick="saveTxDraft()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-1.5 rounded font-semibold">Simpan DRAFT</button>
+        <button onclick="saveTxSubmit()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded font-semibold">Submit ke Akuntan</button>
+      `;
+
+
+
+
+      openModal('Tambah Transaksi Operasional Baru', body, footer);
+    }
+
+
+
+
+    function saveTxDraft() {
+      const desc = document.getElementById('txDesc').value;
+      const amount = Number(document.getElementById('txAmount').value);
+      const type = document.getElementById('txType').value;
+
+
+
+
+      if (!desc || !amount) {
+        showToast('Mohon lengkapi deskripsi dan nominal', 'error');
+        return;
+      }
+
+
+
+
+      callBackend('createTransaction', { desc, amount, type, status: 'DRAFT' }, (res) => {
+        showToast('Transaksi disimpan sebagai DRAFT.', 'info');
+        recordAudit('CREATE_DRAFT_TRANSACTION', 'NEW');
+        closeModal();
+        refreshAllData();
+      });
+    }
+
+
+
+
+    function saveTxSubmit() {
+      const desc = document.getElementById('txDesc').value;
+      const amount = Number(document.getElementById('txAmount').value);
+      const type = document.getElementById('txType').value;
+
+
+
+
+      if (!desc || !amount) {
+        showToast('Mohon lengkapi deskripsi dan nominal', 'error');
+        return;
+      }
+
+
+
+
+      callBackend('createTransaction', { desc, amount, type, status: 'SUBMITTED' }, (res) => {
+        showToast('Transaksi dibuat dan diajukan ke Akuntan.', 'success');
+        recordAudit('SUBMIT_TRANSACTION', 'NEW');
+        closeModal();
+        refreshAllData();
+      });
+    }
+
+
+
+
+    function openCorrectionModal(txId) {
+      const tx = AppState.transactions.find(t => t.id === txId);
+      if (!tx) return;
+
+
+
+
+      const body = `
+        <div class="bg-rose-950/40 border border-rose-900/60 p-3 rounded mb-3">
+          <p class="text-xs text-rose-300 font-bold">Catatan Revisi dari Akuntan:</p>
+          <p class="text-xs text-slate-300 italic">${tx.note || 'Mohon koreksi bukti transaksi.'}</p>
+        </div>
+        <form class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-400 mb-1">Perbaikan Deskripsi / Lampiran</label>
+            <textarea id="corrDesc" rows="3" class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-slate-200">${tx.desc}</textarea>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Nominal Disesuaikan (Rp)</label>
+            <input type="number" id="corrAmount" value="${tx.amount}" class="w-full bg-slate-950 border border-slate-800 p-2 rounded text-slate-200">
+          </div>
+        </form>
+      `;
+
+
+
+
+      const footer = `
+        <button onclick="closeModal()" class="bg-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded">Batal</button>
+        <button onclick="resubmitTx('${tx.id}')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs px-3 py-1.5 rounded font-semibold">Resubmit Koreksi</button>
+      `;
+
+
+
+
+      openModal(`Koreksi Transaksi ${tx.id}`, body, footer);
+    }
+
+
+
+
+    function resubmitTx(txId) {
+      callBackend('resubmitTransaction', { txId: txId }, (res) => {
+        showToast(`Transaksi ${txId} berhasil diperbaiki & dikirim ulang.`, 'success');
+        recordAudit('RESUBMIT_TRANSACTION', txId);
+        closeModal();
+        refreshAllData();
+      });
+    }
+
+
+
+
+    function recordAudit(action, recordId) {
+      AppState.auditLogs.unshift({
+        action: action,
+        recordId: recordId,
+        time: new Date().toLocaleTimeString('id-ID'),
+        user: AppState.currentUser.email
+      });
+      renderAuditLogs();
+    }
+
+
+
+
+    /**
+     * UI TOAST NOTIFICATION SYSTEM
+     */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-900/90 border-emerald-700 text-emerald-100',
+        error: 'bg-rose-900/90 border-rose-700 text-rose-100',
+        info: 'bg-slate-800/90 border-slate-700 text-slate-100'
+      };
+
+
+
+
+      toast.className = `p-3 rounded-xl border shadow-xl text-xs flex items-center justify-between transition-all duration-300 ${colors[type] || colors.info}`;
+      toast.innerHTML = `<span>${message}</span>`;
+
+
+
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+
+
+
+    function toggleNotifDropdown() {
+      document.getElementById('notifDropdown').classList.toggle('hidden');
+    }
+
+
+
+
+    function handleGlobalSearch(e) {
+      if (e.key === 'Enter') {
+        const query = e.target.value;
+        showToast(`Mencari global untuk key: "${query}"`, 'info');
+      }
+    }
+
+
+
+
+    // Modal Helper Stubs
+    function openCustomerModal() { openModal('Tambah Customer', '<p class="text-xs">Form Customer...</p>', '<button onclick="closeModal()" class="bg-slate-700 px-3 py-1 rounded text-xs">Tutup</button>'); }
+    function openVendorModal() { openModal('Tambah Vendor', '<p class="text-xs">Form Vendor...</p>', '<button onclick="closeModal()" class="bg-slate-700 px-3 py-1 rounded text-xs">Tutup</button>'); }
+    function openCreateTaskModal() { openModal('Task Baru', '<p class="text-xs">Form Task...</p>', '<button onclick="closeModal()" class="bg-slate-700 px-3 py-1 rounded text-xs">Tutup</button>'); }
+    function openClarifyAnomalyModal(id) { openModal('Klarifikasi Anomali', `<p class="text-xs">Beri penjelasan untuk temuan ${id}:</p><textarea class="w-full bg-slate-950 p-2 mt-2 border border-slate-800 rounded text-xs" rows="3"></textarea>`, '<button onclick="closeModal()" class="bg-indigo-600 px-3 py-1 rounded text-xs">Kirim Klarifikasi</button>'); }
+    function openUploadDocModal() { openModal('Upload Dokumen Pendukung', '<input type="file" class="text-xs text-slate-300">', '<button onclick="closeModal()" class="bg-indigo-600 px-3 py-1 rounded text-xs">Upload</button>'); }
+    function triggerExport(type) { showToast(`Mengekspor laporan ${type} ke file PDF...`, 'success'); }
+    function saveProfile() { showToast('Profil admin berhasil diperbarui.', 'success'); }
+    function resolveTask(id) {
+      AppState.tasks = AppState.tasks.filter(t => t.id !== id);
+      renderTaskTable();
+      checkUrgentAndAlerts();
+      showToast(`Task ${id} telah diselesaikan.`, 'success');
+    }
+  </script>
+<script>
+/* ERP INTEGRATION BRIDGE v2 */
+window.ERPBridge = window.ERPBridge || (function(){
+  const KEY='erpSession';
+  function session(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+  function save(res){if(res&&res.token){localStorage.setItem(KEY,JSON.stringify({token:res.token,user:res.userData||res.user||{}}));} return res;}
+  function clear(){localStorage.removeItem(KEY);}
+  function call(action,payload,onSuccess,onError){
+    payload=payload||{}; const s=session();
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia. Buka URL Web App resmi.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Backend error'});}).apiCall(action,payload,s?s.token:'');
+  }
+  function bootstrap(page,onSuccess,onError){
+    const s=session();
+    if(!s||!s.token){onError&&onError({code:'NO_SESSION',message:'Sesi login tidak ditemukan.'});return;}
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Bootstrap gagal'});}).getIntegratedBootstrap(s.token,page||'');
+  }
+  return {session,save,clear,call,bootstrap};
+})();
+</script><script>
+(function(){
+  const oldInit=document.addEventListener;
+  window.addEventListener('DOMContentLoaded',function(){
+    const s=ERPBridge.session();
+    if(!s||!s.token){ showToast('Sesi','Silakan login kembali.','error'); return; }
+    const u=s.user||{};
+    AppState.currentUser={email:u.email||u.Email||'',name:u.name||u.Name||'',companyId:u.companyId||u.CompanyID||'COMP-001',role:u.role||u.Role||'ADMIN_PERUSAHAAN'};
+    refreshAllData();
+  },{once:true});
+})();
+</script>
+
+<script>
+/* ERP COMMUNICATION CENTER v1 */
+(function(){
+  const C={users:[],chats:[],broadcasts:[],targetId:'ALL',targetRole:'ALL',user:null,maintenance:null,lastBroadcastKey:''};
+  window.ERPComm=C;
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});}
+  function roleLabel(r){return ({SUPER_ADMIN:'Super Admin',ADMIN_PERUSAHAAN:'Admin Perusahaan',AKUNTAN:'Akuntan',KASIR:'Kasir',MANAJEMEN_PUNCAK:'Manajemen Puncak'}[String(r||'').toUpperCase()]||r||'-');}
+  function call(a,p,s){if(window.ERPBridge&&ERPBridge.call)return ERPBridge.call(a,p,s,function(e){},function(e){erpToast(e.message||'Gagal','error')});}
+  function getToken(){try{const x=JSON.parse(localStorage.getItem('erpSession')||'null');return x&&x.token?x.token:''}catch(e){return ''}}
+  function notify(kind,msg){if(typeof showToast==='function'){try{showToast(msg,kind||'info');return}catch(e){}} if(typeof Swal!=='undefined') Swal.fire(msg);}
+  window.erpToast=notify;
+  function renderUsers(){
+    const box=document.getElementById('erpChatUsers'),filter=(document.getElementById('erpChatRoleFilter')||{}).value||'ALL'; if(!box)return;
+    box.innerHTML=C.users.filter(u=>u.id!==((C.user||{}).id||'')&&(filter==='ALL'||String(u.role||'').toUpperCase()===filter)).map(u=>`<button type="button" onclick="erpChatSelect('${esc(u.id)}','${esc(u.role)}','${esc(u.name||u.email)}')" class="w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 hover:bg-slate-950 transition"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-indigo-500/15 text-indigo-300 flex items-center justify-center text-xs font-bold">${esc((u.name||'?').charAt(0).toUpperCase())}</div><div class="min-w-0"><div class="text-xs font-bold text-white truncate">${esc(u.name||u.email)}</div><div class="text-[10px] text-slate-500 truncate">${esc(roleLabel(u.role))}</div></div></div></button>`).join('')||'<div class="text-xs text-slate-500 p-3">Tidak ada pengguna untuk filter ini.</div>';
+  }
+  function renderMessages(){
+    const box=document.getElementById('erpChatMessages'); if(!box)return;
+    const me=(C.user&&C.user.id)||''; const selected=C.targetId||'ALL'; const role=C.targetRole||'ALL';
+    const arr=C.chats.filter(m=>{
+      const sender=String(m.SenderID||m.senderId||''); const receiver=String(m.ReceiverID||m.receiverId||''); const rt=String(m.RoleTarget||m.roleTarget||'').toUpperCase();
+      if(selected==='ALL'&&role==='ALL') return rt==='ALL'||receiver==='ALL'||receiver==='';
+      if(role!=='ALL') return (rt===role||rt==='ROLE:'+role)&& (sender===me||receiver===me||sender!=='' );
+      return (sender===me&&receiver===selected)||(receiver===me&&sender===selected);
+    });
+    box.innerHTML=arr.map(m=>{const mine=String(m.SenderID||m.senderId||'')===String(me);return `<div class="flex ${mine?'justify-end':'justify-start'}"><div class="max-w-[82%] px-3 py-2.5 rounded-2xl ${mine?'bg-indigo-600 text-white':'bg-slate-800 text-slate-200'}"><div class="text-[9px] opacity-70 mb-1">${esc(m.Pengirim||m.SenderName||'User')} · ${esc(m.Waktu||m.Time||'')}</div><div class="text-xs leading-relaxed whitespace-pre-wrap">${esc(m.Pesan||m.Text||'')}</div></div></div>`}).join('')||'<div class="h-full min-h-[240px] flex items-center justify-center text-xs text-slate-500">Belum ada pesan pada percakapan ini.</div>';
+    box.scrollTop=box.scrollHeight;
+  }
+  function renderBroadcasts(){
+    const box=document.getElementById('erpBroadcastItems'), latest=C.broadcasts||[]; if(box)box.innerHTML=latest.map(b=>`<div class="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5"><div class="flex items-center justify-between gap-2"><b class="text-xs text-amber-300">${esc(b.Title||'Broadcast')}</b><span class="text-[9px] text-slate-500">${esc(b.Date||b.CreatedAt||'')}</span></div><p class="text-xs text-slate-300 mt-1 whitespace-pre-wrap">${esc(b.Message||'')}</p><div class="text-[9px] text-slate-500 mt-1">Target: ${esc(b.Target||'ALL')}</div></div>`).join('')||'<div class="text-xs text-slate-500">Belum ada broadcast.</div>';
+    const top=latest[0]; const n=document.getElementById('erpGlobalNotice'); if(top&&n){document.getElementById('erpGlobalNoticeTitle').textContent=top.Title||'Pengumuman Sistem';document.getElementById('erpGlobalNoticeText').textContent=top.Message||'';n.classList.remove('hidden');}
+  }
+  function apply(res){
+    if(!res)return; C.user=res.user||C.user; C.users=res.users||[]; C.chats=res.chats||[]; C.broadcasts=res.broadcasts||[]; C.maintenance=res.maintenance||null;
+    renderUsers();renderMessages();renderBroadcasts();applyMaintenance(C.maintenance);
+  }
+  function applyMaintenance(m){
+    const overlay=document.getElementById('erpMaintenanceOverlay'), txt=document.getElementById('erpMaintenanceText'); if(!overlay)return;
+    const role=String((C.user||{}).role||'').toUpperCase(); const on=!!(m&&m.isUnderMaintenance); if(txt)txt.textContent=(m&&m.noticeText)||'Operasional sementara dikunci oleh Super Admin.';
+    if(on&&role!=='SUPER_ADMIN')overlay.classList.remove('hidden'); else overlay.classList.add('hidden');
+    if(typeof checkMaintenanceStatus==='function' && role==='SUPER_ADMIN') try{checkMaintenanceStatus()}catch(e){}
+  }
+  window.applyMaintenance=applyMaintenance;
+  window.closeErpNotice=function(){const n=document.getElementById('erpGlobalNotice');if(n)n.classList.add('hidden');};
+  window.erpChatSelect=function(id,role,name){C.targetId=id;C.targetRole=role==='ALL'?'ALL':'';const t=document.getElementById('erpChatTargetTitle'),s=document.getElementById('erpChatTargetSub');if(t)t.textContent=name||'Penerima';if(s)s.textContent=role==='ALL'?'Semua pengguna':roleLabel(role);renderUsers();renderMessages();};
+  window.erpChatRenderUsers=renderUsers;
+  window.erpChatSend=function(e){
+    e.preventDefault(); const input=document.getElementById('erpChatInput'); const text=(input&&input.value||'').trim(); if(!text)return;
+    const payload={text:text,receiverId:C.targetId||'ALL',roleTarget:C.targetRole||'ALL'};
+    if(input)input.disabled=true;
+    ERPBridge.call('sendInternalChat',payload,function(r){if(input){input.value='';input.disabled=false;} if(r&&r.chat)C.chats.push(r.chat);renderMessages();},function(err){if(input)input.disabled=false;notify('error',err.message||'Gagal mengirim pesan');});
+  };
+  window.erpChatRefresh=function(){
+    const s=ERPBridge.session&&ERPBridge.session(); if(!s||!s.token)return;
+    ERPBridge.call('getCommunicationData',{},function(r){apply(r)},function(e){notify('error',e.message||'Gagal memuat komunikasi');});
+  };
+  window.erpRefreshCommunication=window.erpChatRefresh;
+  window.erpCommBoot=function(){erpChatRefresh();};
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(erpCommBoot,350);});
+})();
+</script>
+
+<script>
+/* ADMIN ERP SYNC v1 */
+(function(){
+  window.erpWorkspaceSync=function(silent){
+    ERPBridge.call('syncWorkspaceData',{},function(r){ if(r&&r.data){window.__ERP_ADMIN_SYNC=r.data;} if(!silent && typeof showToast==='function') showToast('Sinkronisasi ERP','Data terbaru berhasil diambil dari Google Sheet.','success'); if(typeof window.refreshData==='function') window.refreshData(); },function(e){ showToast&&showToast('Sync Gagal',e.message||'Gagal sinkronisasi','error'); });
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    const h=document.querySelector('header')||document.body;const b=document.createElement('button');b.type='button';b.textContent='↻ Sinkronisasi ERP';b.className='px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold ml-2';b.onclick=window.erpWorkspaceSync;h.appendChild(b);
+  },{once:true});
+})();
+</script>
+<script>
+/* ERP SMART SYNC v2 */
+(function(){
+  var lastData=null,lastComm=null,busyData=false,busyComm=false;
+  function poll(){
+    if(document.visibilityState!=='visible'||!window.ERPBridge) return;
+    ERPBridge.call('getSyncState',{},function(st){
+      if(!st)return;
+      var dv=String(st.dataVersion||''),cv=String(st.commVersion||'');
+      if(lastData===null){lastData=dv;lastComm=cv;return;}
+      var dataChanged=dv!==lastData,commChanged=cv!==lastComm;
+      lastData=dv;lastComm=cv;
+      if(commChanged&&!busyComm&&typeof window.erpChatRefresh==='function'){
+        busyComm=true;try{window.erpChatRefresh(true);}finally{setTimeout(function(){busyComm=false;},1000);}
+      }
+      if(dataChanged&&!busyData){
+        var fn=null;
+        if(typeof window.erpForceSync==='function') fn=window.erpForceSync;
+        else if(typeof window.erpAccountantSync==='function') fn=window.erpAccountantSync;
+        else if(typeof window.erpWorkspaceSync==='function') fn=window.erpWorkspaceSync;
+        else if(typeof window.refreshExecControlCenter==='function') fn=window.refreshExecControlCenter;
+        if(fn){busyData=true;try{fn(true);}finally{setTimeout(function(){busyData=false;},1800);}}
+      }
+    },function(){});
+  }
+  document.addEventListener('DOMContentLoaded',function(){poll();setInterval(poll,5000);},{once:true});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')poll();});
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrasi Akun</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body { background-color: #f3f4f6; }
+    .spinner { border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; width: 20px; height: 20px; animation: spin 1s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+
+
+
+  <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+    <div class="text-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">Daftar Akun Baru</h1>
+      <p class="text-gray-500 text-sm mt-1">Lengkapi data Anda untuk mendaftar.</p>
+    </div>
+
+
+
+
+    <!-- Menghapus onsubmit dari tag form agar lebih aman -->
+    <form id="registerForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+        <input type="text" id="name" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Email Aktif</label>
+        <input type="email" id="email" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">No. WhatsApp</label>
+        <input type="tel" id="wa" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Kata Sandi</label>
+        <input type="password" id="password" required minlength="6" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+      </div>
+     
+      <!-- PERUBAHAN PENTING: type diubah menjadi "button", bukan "submit" -->
+      <!-- Menambahkan onclick="handleRegister()" secara eksplisit -->
+      <button type="button" onclick="handleRegister()" id="btnSubmit" class="w-full flex justify-center items-center bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
+        <span id="btnText">Daftar Sekarang</span>
+        <div id="btnSpinner" class="spinner hidden ml-2"></div>
+      </button>
+    </form>
+   
+    <div class="mt-6 text-center text-sm text-gray-600">
+      Sudah punya akun?
+      <? var url = getScriptUrl(); ?>
+      <a href="<?= url ?>?page=Login" target="_top" class="text-blue-600 hover:underline font-medium">Masuk di sini</a>
+    </div>
+  </div>
+
+
+
+
+  <script>
+    function handleRegister() {
+      // Validasi manual karena type="button" tidak otomatis memvalidasi input 'required'
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const wa = document.getElementById('wa').value;
+      const password = document.getElementById('password').value;
+
+
+
+
+      if (!name || !email || !wa || !password) {
+        Swal.fire('Peringatan', 'Harap isi semua bidang formulir!', 'warning');
+        return;
+      }
+     
+      const formData = {
+        name: name,
+        email: email,
+        wa: wa,
+        password: password,
+        role: 'PENDING',
+        companyId: '-'
+      };
+
+
+
+
+      const btnSubmit = document.getElementById('btnSubmit');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+
+
+
+      btnSubmit.disabled = true;
+      btnSubmit.classList.add('opacity-70');
+      btnText.innerText = "Memproses Data...";
+      btnSpinner.classList.remove('hidden');
+
+
+
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.triggerEmail) {
+            btnText.innerText = "Mengirim Email...";
+            google.script.run
+              .withSuccessHandler(function() { finishSuccess(); })
+              .withFailureHandler(function() { finishSuccess(); })
+              .triggerPendingEmail(response.triggerEmail);
+          } else {
+             finishSuccess();
+          }
+        })
+        .withFailureHandler(function(error) {
+          Swal.fire('Gagal', error.message, 'error');
+          resetButton(btnSubmit, btnText, btnSpinner, "Daftar Sekarang");
+        })
+        .RegisterUser(formData);
+    }
+
+
+
+
+    function finishSuccess() {
+        const btnSubmit = document.getElementById('btnSubmit');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+       
+        Swal.fire({
+            icon: 'success',
+            title: 'Registrasi Berhasil!',
+            text: 'Silakan cek email Anda & tunggu aktivasi dari Superadmin.',
+            confirmButtonColor: '#2563eb'
+        }).then(() => {
+            document.getElementById('registerForm').reset();
+            resetButton(btnSubmit, btnText, btnSpinner, "Daftar Sekarang");
+           
+            // Redirect aman menggunakan URL eksternal ke halaman Login
+            google.script.run.withSuccessHandler(function(url) {
+                window.top.location.href = url + "?page=Login";
+            }).getScriptUrl();
+        });
+    }
+
+
+
+
+    function resetButton(btn, textElement, spinner, originalText) {
+      btn.disabled = false;
+      btn.classList.remove('opacity-70');
+      textElement.innerText = originalText;
+      spinner.classList.add('hidden');
+    }
+  </script>
+<script>
+/* ERP INTEGRATION BRIDGE v2 */
+window.ERPBridge = window.ERPBridge || (function(){
+  const KEY='erpSession';
+  function session(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+  function save(res){if(res&&res.token){localStorage.setItem(KEY,JSON.stringify({token:res.token,user:res.userData||res.user||{}}));} return res;}
+  function clear(){localStorage.removeItem(KEY);}
+  function call(action,payload,onSuccess,onError){
+    payload=payload||{}; const s=session();
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia. Buka URL Web App resmi.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Backend error'});}).apiCall(action,payload,s?s.token:'');
+  }
+  function bootstrap(page,onSuccess,onError){
+    const s=session();
+    if(!s||!s.token){onError&&onError({code:'NO_SESSION',message:'Sesi login tidak ditemukan.'});return;}
+    if(typeof google==='undefined'||!google.script||!google.script.run){onError&&onError({message:'Google Apps Script tidak tersedia.'});return;}
+    google.script.run.withSuccessHandler(function(res){if(res&&res.error){onError&&onError({message:res.error});return;}onSuccess&&onSuccess(res);}).withFailureHandler(function(e){onError&&onError(e||{message:'Bootstrap gagal'});}).getIntegratedBootstrap(s.token,page||'');
+  }
+  return {session,save,clear,call,bootstrap};
+})();
+</script>
+</body>
+</html>
